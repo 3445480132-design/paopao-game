@@ -78,7 +78,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 #tree .left .trow{flex:1}
 #tree .right .gtitle{flex:none}
 #tree .right .trow{flex:1}
-.gtitle{margin:14px 0 8px;font-size:12px;color:#9fc3ff;letter-spacing:2px;
+.gtitle{margin:9px 0 4px;font-size:12px;color:#9fc3ff;letter-spacing:2px;
   border-bottom:1px solid rgba(159,195,255,.35);padding-bottom:4px}
 .gtitle .gar{color:#7ec8ff;margin-right:6px}
 .dot{width:13px;height:13px;border:2px solid var(--dc,#888);background:rgba(255,255,255,.05);
@@ -91,7 +91,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
   background:rgba(20,24,44,.97);border:2px solid #ffd75e;border-radius:8px;padding:8px 10px;
   font-size:11px;color:#dde6ff;line-height:1.6}
 #ttip .tc{color:#ffd75e}
-.trow{display:flex;align-items:center;gap:8px;padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.06)}
+.trow{display:flex;align-items:center;gap:8px;padding:3px 2px;border-bottom:1px solid rgba(255,255,255,.06)}
 .trow .tico{width:32px;height:32px;background:#0e1730;border:2px solid #39508f;flex-shrink:0;border-radius:5px;
   display:flex;align-items:center;justify-content:center;overflow:hidden}
 .trow .tico img{width:100%;height:100%;object-fit:contain}
@@ -242,11 +242,11 @@ const ITEMS=[
   {name:"反物质湮灭器",price:500000000,type:"冷却(60s)",icon:"🌌", desc:"点击清屏,60s冷却",   img:ICONS+"道具9.png"},
 ];
 const DESKS=[
-  {name:"家里的书桌", unlock:0,    note:"初始"},
-  {name:"课桌",       unlock:999,  note:"制作中,暂未开放"},
-  {name:"办公桌",     unlock:999,  note:"制作中,暂未开放"},
-  {name:"电脑桌",     unlock:999,  note:"制作中,暂未开放"},
-  {name:"宇宙台",     unlock:999,  note:"制作中,暂未开放"},
+  {name:"家里的书桌", unlock:0,    note:"初始",  icon:"01_泡泡经济素材/桌面图标/桌面0.png"},
+  {name:"课桌",       unlock:999,  note:"制作中,暂未开放", icon:"01_泡泡经济素材/桌面图标/桌面1.png"},
+  {name:"办公桌",     unlock:999,  note:"制作中,暂未开放", icon:"01_泡泡经济素材/桌面图标/桌面2.png"},
+  {name:"电脑桌",     unlock:999,  note:"制作中,暂未开放", icon:"01_泡泡经济素材/桌面图标/桌面3.png"},
+  {name:"宇宙台",     unlock:999,  note:"制作中,暂未开放", icon:"01_泡泡经济素材/桌面图标/桌面4.png"},
 ];
 /* 8种泡: 概率为策划案 6.2 基础概率(总和97.9%, 余量归透明泡兜底) */
 const BUBBLES=[
@@ -756,7 +756,7 @@ function renderShop(){
     const unlocked=idx<=S.curDesk && (idx===0 || S.sheetCount>=(S.ownedDesks?1:1) && S.sheetCount>=d.unlock || S.ownedDesks.includes(idx));
     const has=S.ownedDesks.includes(idx);
     row.className="item"+(has?(S.curDesk===idx?" eq":""):" lock");
-    row.innerHTML=`<div class="ic">🖥</div><div class="nm">${d.name}<br><small>${d.note}</small></div>
+    row.innerHTML=`<div class="ic"><img src="${d.icon}"></div><div class="nm">${d.name}<br><small>${d.note}</small></div>
       <div class="od">${has?(S.curDesk===idx?"使用中":"切换"):(d.unlock>=999?"🔒 敬请期待":"🔒 换纸×"+d.unlock)}</div>`;
     row.onclick=()=>{
       if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
