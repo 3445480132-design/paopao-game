@@ -1444,5 +1444,35 @@ document.getElementById("titleBg").addEventListener("load", placeTitle);
 window.addEventListener("load", placeTitle);
 init();
 </script>
+<script>
+/* 图片CDN轮换备用:加载不出的图依次换 jsDelivr其他边缘/gh镜像重试 */
+(function(){
+  var CDNS=["https://cdn.jsdelivr.net/gh/3445480132-design/paopao-game@main/",
+            "https://fastly.jsdelivr.net/gh/3445480132-design/paopao-game@main/",
+            "https://gcore.jsdelivr.net/gh/3445480132-design/paopao-game@main/",
+            "https://gh-proxy.com/https://raw.githubusercontent.com/3445480132-design/paopao-game/main/"];
+  function relOf(im){
+    var s=im.getAttribute("src")||"";
+    if(s.indexOf("raw.githubusercontent.com")>-1)return s.split("paopao-game/main/")[1];
+    return s.replace(/^https?:\/\/[^\/]+\/gh\/[^\/]+\/[^\/]+\/[^\/]+\//,"");
+  }
+  var rounds=0;
+  function rotate(){
+    var ims=document.querySelectorAll("img"),bad=0;
+    for(var i=0;i<ims.length;i++){
+      var im=ims[i];
+      if(im.complete&&im.naturalWidth>0){continue;}
+      bad++;
+      if(!im.dataset.rel)im.dataset.rel=relOf(im);
+      if(!im.dataset.rel||im.dataset.rel[0]==="/"||im.dataset.rel.indexOf("://")>-1)continue;
+      var k=parseInt(im.dataset.k||"0",10)+1;
+      im.dataset.k=k;
+      im.src=CDNS[k%CDNS.length]+im.dataset.rel;
+    }
+    if(bad>0&&rounds<8){rounds++;setTimeout(rotate,3000);}
+  }
+  setTimeout(rotate,4000);
+})();
+</script>
 </body>
 </html>
