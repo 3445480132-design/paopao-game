@@ -217,11 +217,17 @@ const SHEETS=[ // 泡泡纸是消耗品:每张都要重新购买;theme=纸的样
     theme:{bg:"#f6efff", edge:"rgba(190,140,255,.9)", stars:0}},
   {name:"熔岩膜", price:100000, base:8,  dens:300, rare:1.7, tier:2, focus:"密度型",
     theme:{bg:"#ffe9d6", edge:"rgba(255,140,70,.95)", stars:0}},
-  {name:"深海膜", price:10000000, base:40, dens:160, rare:2.5, tier:3, focus:"基数型",
+  {name:"深海膜", price:10000000, base:40, dens:160, rare:2.5, tier:3, focus:"基数型", lock:1,
     theme:{bg:"#1d3a5c", edge:"rgba(90,140,255,.9)", stars:1}},
-  {name:"星辰膜", price:10000000, base:40, dens:300, rare:3.0, tier:3, focus:"全能型",
+  {name:"星辰膜", price:10000000, base:40, dens:300, rare:3.0, tier:3, focus:"全能型", lock:1,
     theme:{bg:"#161c40", edge:"rgba(140,150,255,.9)", stars:2}},
 ];
+/* 各档膜背景(像素风空膜, 构图同基础膜): 5/6 暂无素材, 已锁定 */
+const MEMB_MAP={0:"01_泡泡经济素材/泡膜_空膜.png",
+  1:"01_泡泡经济素材/泡膜/空膜_琉璃膜.png",
+  2:"01_泡泡经济素材/泡膜/空膜_冰霜膜.png",
+  3:"01_泡泡经济素材/泡膜/空膜_棱镜膜.png",
+  4:"01_泡泡经济素材/泡膜/空膜_熔岩膜.png"};
 const ICONS="01_泡泡经济素材/道具图标/";
 const ITEMS=[
   {name:"手指",       price:0,  type:"手动",    icon:"👆", desc:"手动点击",                    img:ICONS+"道具0.png"},
@@ -269,7 +275,7 @@ const S={
   cd:0, catT:1,
   tree:{it:[0,0,0,0,0,0,0,0,0,0], un:new Array(13).fill(0)}, // 技能树:道具10行5级 + 通用(Combo4+连锁1+类型8)5级
 };
-let bubbles=[]; let parts=[]; let floats=[]; let bgImage=null; let paperImg=null; let membImg=null; let lastT=0;
+let bubbles=[]; let parts=[]; let floats=[]; let bgImage=null; let paperImg=null; let membImg=null; const membImgs={}; let lastT=0;
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
 const ASPECT=1280/720;
 
@@ -280,13 +286,15 @@ function toast(msg,dur=2000){ const t=document.getElementById("toast"); t.textCo
   clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",dur); }
 function pickBubble(kind){ // kind=true 表示随机抽取
   if(kind && kind!==true) return kind;
-  let p=Math.random()*100, acc=0;
-  for(const bb of BUBBLES){
-    let pr=bb.prob*SHEETS[S.sheetIdx].rare;
+  const prs=BUBBLES.map(bb=>{
+    let pr=bb.prob*SHEETS[S.sheetIdx].rare; // 特殊泡率放大后, 总和可能>100, 必须归一化
     const ri=["b","s","g","r","d","f","v","t"].indexOf(bb.key); // 技能:泡泡类型概率(顺序=UN_TREE铺平序)
     if(ri>=0) pr*=1+0.08*S.tree.un[5+ri];
-    acc+=pr; if(p<=acc) return bb.key;
-  }
+    return pr;
+  });
+  const tot=prs.reduce((a,b)=>a+b,0);
+  let p=Math.random()*tot, acc=0;
+  for(let i=0;i<BUBBLES.length;i++){ acc+=prs[i]; if(p<=acc) return BUBBLES[i].key; }
   return "t";
 }
 function gain(v, x, y, color){
@@ -501,14 +509,15 @@ function draw(){
   // 泡泡纸:桌面上的一张纸,配色随膜类型变化(素材到位前用代码画的色)
   const px=PAPER.x, py=PAPER.y, pw=PAPER.w, ph=PAPER.h;
   const th=SHEETS[S.sheetIdx].theme;
-  const baseIsMemb=S.sheetIdx===0 && membImg && membImg.complete;
+  const mimg=membImgs[S.sheetIdx];
+  const baseIsMemb=!!(mimg && mimg.complete);
   if(!baseIsMemb){
     ctx.fillStyle="rgba(0,0,0,.20)";
     rrect(px+5,py+7,pw,ph,8); ctx.fill();
   }
   if(baseIsMemb){
-    // 基础膜第一层:空膜素材(PAPER已按膜比例fit, 无代码框, 交互区=膜全宽)
-    ctx.drawImage(membImg, px, py, pw, ph);
+    // 膜第一层:空膜素材(PAPER已按膜比例fit, 无代码框, 交互区=膜全宽)
+    ctx.drawImage(mimg, px, py, pw, ph);
   } else if(S.sheetIdx===0 && paperImg && paperImg.complete){
     // 旧基础膜:透明泡纸素材(透出桌面, 泡圈有对比)
     ctx.save();
@@ -680,11 +689,13 @@ function renderShop(){
     const row=document.createElement("div");
     const cur=idx===S.sheetIdx;
     const owned=S.ownedSheets.includes(idx);
-    row.className="item"+(cur?" eq":"")+(owned?"":" lock");
+    const locked=!!s.lock;
+    row.className="item"+(cur?" eq":"")+(locked||!owned?" lock":"");
     row.innerHTML=`<div class="ic">▤</div><div class="nm">${s.name}<br><small>${s.focus} · 每泡¥${s.base*10} · ${s.dens}泡 · 稀有率×${s.rare}</small></div>
-      <div class="od">${cur?"使用中":(owned?"切换":("¥"+s.price.toLocaleString()+" 购买"))}</div>`;
+      <div class="od">${cur?"使用中":(locked?"🔒 敬请期待":(owned?"切换":("¥"+s.price.toLocaleString()+" 购买")))}</div>`;
     row.onclick=()=>{
       if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
+      if(s.lock){ SFX.ui(); toast("该膜制作中,敬请期待"); return; }
       if(!owned && S.money<s.price){ SFX.ui(); toast("解压值不足(需 ¥"+s.price.toLocaleString()+")"); return; }
       if(!owned){ S.money-=s.price; S.ownedSheets.push(idx); }
       S.sheetIdx=idx; S.sheetCount++; S.emptyWarn=false;
@@ -1413,9 +1424,13 @@ function init(){
   load();
   loadSnd();
   bgImage=new Image(); bgImage.src="01_泡泡经济素材/成品库/背景图/主界面桌面.png";
-  membImg=new Image();
-  membImg.onload=()=>{ fitPaperToMembrane(); try{ gridPopulate(SHEETS[S.sheetIdx].dens); }catch(e){} };
-  membImg.src="01_泡泡经济素材/泡膜_空膜.png";  // 第一层: 空膜底纸(无泡, AI清理+剪影), 泡/破泡为第二层; onload时PAPER按膜自适应+重排
+  // 各档膜空膜背景(第一层), onload时若为当前膜则 PAPER 自适应+重排
+  for(const k in MEMB_MAP){
+    const im=new Image(); im.src=MEMB_MAP[k];
+    im.onload=()=>{ if(String(S.sheetIdx)===k){ fitPaperToMembrane(); try{ gridPopulate(SHEETS[S.sheetIdx].dens); }catch(e){} } };
+    membImgs[k]=im;
+  }
+  membImg=membImgs[0]; // 兼容旧引用(预览层等)
   paperImg=new Image(); paperImg.src="01_泡泡经济素材/泡纸_主界面_透明.png";  // 基础膜:透明泡纸素材
   loadSpr();
   gridPopulate(SHEETS[S.sheetIdx].dens);
