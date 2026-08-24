@@ -178,7 +178,7 @@ body.deskonly #title,body.deskonly #wake
   <div id="toast"></div>
 
   <div id="title">
-    <img id="titleBg" src="01_泡泡经济素材/背景图/标题背景.png" alt="">
+    <img id="titleBg" src="01_泡泡经济素材/成品库/背景图/主界面_无按钮无光.png" alt="">
     <div class="hit" id="t-go" title="开始游戏">
       <img id="startBtn" src="01_泡泡经济素材/界面元素/按钮开始_椭圆.png" alt="开始游戏">
     </div>
@@ -207,56 +207,56 @@ body.deskonly #title,body.deskonly #wake
 const STEP=5;
 /* ================= 数据(策划案数值) ================= */
 const SHEETS=[ // 泡泡纸是消耗品:每张都要重新购买;theme=纸的样貌(暂无素材,先代码配色)
-  {name:"基础膜", price:25, base:100, dens:50,  rare:1.0, tier:"—", focus:"均衡",
+  {name:"基础膜", price:25, base:1, dens:50,  rare:1.0, tier:"—", focus:"均衡",
     theme:{bg:"#fdfbf4", edge:"rgba(0,0,0,.28)", stars:0}},
-  {name:"琉璃膜", price:100, base:40,  dens:60,  rare:1.2, tier:1, focus:"基数型",
+  {name:"琉璃膜", price:1000, base:4,  dens:60,  rare:1.2, tier:1, focus:"基数型",
     theme:{bg:"#eaf3ff", edge:"rgba(120,170,255,.9)", stars:0}},
-  {name:"冰霜膜", price:100, base:20,  dens:120, rare:1.2, tier:1, focus:"密度型",
+  {name:"冰霜膜", price:1000, base:2,  dens:120, rare:1.2, tier:1, focus:"密度型",
     theme:{bg:"#e8fbff", edge:"rgba(140,220,255,.95)", cryst:1}},
-  {name:"棱镜膜", price:2000, base:180, dens:85,  rare:1.7, tier:2, focus:"基数型",
+  {name:"棱镜膜", price:100000, base:18, dens:85,  rare:1.7, tier:2, focus:"基数型",
     theme:{bg:"#f6efff", edge:"rgba(190,140,255,.9)", stars:0}},
-  {name:"熔岩膜", price:2000, base:80,  dens:300, rare:1.7, tier:2, focus:"密度型",
+  {name:"熔岩膜", price:100000, base:8,  dens:300, rare:1.7, tier:2, focus:"密度型",
     theme:{bg:"#ffe9d6", edge:"rgba(255,140,70,.95)", stars:0}},
-  {name:"深海膜", price:50000, base:400, dens:160, rare:2.5, tier:3, focus:"基数型",
+  {name:"深海膜", price:10000000, base:40, dens:160, rare:2.5, tier:3, focus:"基数型",
     theme:{bg:"#1d3a5c", edge:"rgba(90,140,255,.9)", stars:1}},
-  {name:"星辰膜", price:50000, base:400, dens:300, rare:3.0, tier:3, focus:"全能型",
+  {name:"星辰膜", price:10000000, base:40, dens:300, rare:3.0, tier:3, focus:"全能型",
     theme:{bg:"#161c40", edge:"rgba(140,150,255,.9)", stars:2}},
 ];
 const ICONS="01_泡泡经济素材/道具图标/";
 const ITEMS=[
   {name:"手指",       price:0,  type:"手动",    icon:"👆", desc:"手动点击",                    img:ICONS+"道具0.png"},
-  {name:"缝衣针",     price:10,  type:"手动",    icon:"🪡", desc:"针形光标 · 20%暴击×3",    img:ICONS+"道具1.png"},
-  {name:"爆竹",       price:50,  type:"被动触发",icon:"🧨", desc:"戳泡15%爆炸连锁",          img:ICONS+"道具3.png"},
-  {name:"随身听",     price:200, type:"辅助",    icon:"📻", desc:"换歌",                img:ICONS+"道具2.png"},
-  {name:"弹球炮台",   price:500, type:"手动",    icon:"🔮", desc:"点击发射弹球,路径引爆",   img:ICONS+"道具4.png"},
-  {name:"玩具赛车",   price:1500, type:"手动",    icon:"🏎", desc:"点击碾过一条泡线",         img:ICONS+"道具6.png"},
-  {name:"激光发射器", price:5000, type:"手动",    icon:"🔦", desc:"点击横扫一条泡带",         img:ICONS+"道具5.png"},
-  {name:"弹弓",       price:15000, type:"手动",   icon:"🏹", desc:"点击抛物线落点爆炸",       img:ICONS+"道具7.png"},
-  {name:"猫咪",       price:50000, type:"持续自动",icon:"🐱", desc:"每1.5s自动戳一次",        img:ICONS+"道具8.png"},
-  {name:"反物质湮灭器",price:200000,type:"冷却(60s)",icon:"🌌", desc:"点击清屏,60s冷却",     img:ICONS+"道具9.png"},
+  {name:"缝衣针",     price:15,  type:"手动",    icon:"🪡", desc:"针形光标 · 20%暴击×3",    img:ICONS+"道具1.png"},
+  {name:"爆竹",       price:100, type:"被动触发",icon:"🧨", desc:"戳泡15%爆炸连锁",          img:ICONS+"道具3.png"},
+  {name:"随身听",     price:500, type:"辅助",    icon:"📻", desc:"换歌",                img:ICONS+"道具2.png"},
+  {name:"弹球炮台",   price:1000, type:"手动",   icon:"🔮", desc:"点击发射弹球,路径引爆",   img:ICONS+"道具4.png"},
+  {name:"玩具赛车",   price:8000, type:"手动",   icon:"🏎", desc:"点击碾过一条泡线",         img:ICONS+"道具6.png"},
+  {name:"激光发射器", price:50000, type:"手动",  icon:"🔦", desc:"点击横扫一条泡带",         img:ICONS+"道具5.png"},
+  {name:"弹弓",       price:300000, type:"手动", icon:"🏹", desc:"点击抛物线落点爆炸",       img:ICONS+"道具7.png"},
+  {name:"猫咪",       price:5000000, type:"持续自动",icon:"🐱", desc:"每1.5s自动戳一次",        img:ICONS+"道具8.png"},
+  {name:"反物质湮灭器",price:500000000,type:"冷却(60s)",icon:"🌌", desc:"点击清屏,60s冷却",   img:ICONS+"道具9.png"},
 ];
 const DESKS=[
   {name:"家里的书桌", unlock:0,    note:"初始"},
-  {name:"课桌",       unlock:3,    note:"换到第3张泡泡纸"},
-  {name:"办公桌",     unlock:8,    note:"第8张"},
-  {name:"电脑桌",     unlock:15,   note:"第15张"},
-  {name:"宇宙台",     unlock:25,   note:"第25张"},
+  {name:"课桌",       unlock:999,  note:"制作中,暂未开放"},
+  {name:"办公桌",     unlock:999,  note:"制作中,暂未开放"},
+  {name:"电脑桌",     unlock:999,  note:"制作中,暂未开放"},
+  {name:"宇宙台",     unlock:999,  note:"制作中,暂未开放"},
 ];
-/* 8种泡: 概率暂时调高便于全种目视, 后续再平衡 */
+/* 8种泡: 概率为策划案 6.2 基础概率(总和97.9%, 余量归透明泡兜底) */
 const BUBBLES=[
-  {key:"t", name:"透明泡", mult:1,  prob:34.0,  color:"#eaeaea", r:26, desc:"×1"},
-  {key:"b", name:"蓝色泡", mult:2,  prob:26.0,  color:"#9cc7ff", r:29, desc:"×2"},
-  {key:"s", name:"黄铜泡", mult:5,  prob:12.0,  color:"#c8913a", r:26, desc:"×5"},
-  {key:"g", name:"金泡",   mult:25, prob:10.0,  color:"#ffd24a", r:26, desc:"×25"},
-  {key:"r", name:"彩虹泡", mult:100, prob:6.0,   color:"#ff8bd0", r:26, desc:"×100"},
-  {key:"d", name:"暗黑泡", mult:500, prob:4.0,   color:"#4a2a66", r:26, desc:"×500"},
-  {key:"f", name:"分裂泡", mult:2500,prob:4.0,   color:"#3ddc84", r:24, desc:"×2500"},
-  {key:"v", name:"虚空泡", mult:15000,prob:4.0,  color:"#050505", r:30, desc:"×15000 清屏"},
+  {key:"t", name:"透明泡", mult:1,  prob:72.0,  color:"#eaeaea", r:26, desc:"×1"},
+  {key:"b", name:"蓝色泡", mult:2,  prob:20.0,  color:"#9cc7ff", r:29, desc:"×2"},
+  {key:"s", name:"黄铜泡", mult:5,  prob:4.0,   color:"#c8913a", r:26, desc:"×5"},
+  {key:"g", name:"金泡",   mult:25, prob:1.5,   color:"#ffd24a", r:26, desc:"×25"},
+  {key:"r", name:"彩虹泡", mult:100, prob:0.3,   color:"#ff8bd0", r:26, desc:"×100"},
+  {key:"d", name:"暗黑泡", mult:500, prob:0.08,  color:"#4a2a66", r:26, desc:"×500"},
+  {key:"f", name:"分裂泡", mult:2500,prob:0.03,  color:"#3ddc84", r:24, desc:"×2500"},
+  {key:"v", name:"虚空泡", mult:15000,prob:0.003,color:"#050505", r:30, desc:"×15000 清屏"},
 ];
 /* Combo 倍率区间和狂热 */
-const COMBO_TABLE=[[20,1],[100,2],[500,3,0],[1000,5,0]]; // 下限->倍率(纯展示),狂热独立
+const COMBO_TABLE=[[15,1],[80,2],[350,3,0],[700,5,0]]; // 下限->倍率(纯展示),狂热独立;阈值较策划案略降,让解压值获取顺滑一点
 function comboMult(c){ // 技能:倍率强化
-  let m=1; if(c>=1000) m=10; else if(c>=500) m=5; else if(c>=100) m=3; else if(c>=20) m=2;
+  let m=1; if(c>=700) m=10; else if(c>=350) m=5; else if(c>=80) m=3; else if(c>=15) m=2;
   m*=1+0.08*S.tree.un[1];
   return Math.round(m*100)/100;
 }
@@ -400,10 +400,10 @@ function burstIt(b){ // 戳破一个泡:原地留下破泡残骸
   S.popTotal++;
   if(S.comboTime>0) S.combo++; else S.combo=1;
   S.comboTime=0.5+0.04*S.tree.un[0]; // 技能:计时器延长
-  const C=[20,100,500,1000];
+  const C=[15,80,350,700];
   if(C.includes(S.combo)) SFX.combo(C.indexOf(S.combo)); // 连击升段音
-  SFX.setComboPad(S.combo>=20?(S.combo>=1000?4:S.combo>=500?3:S.combo>=100?2:1):-1);
-  if(S.combo>=1000 && S.frenzy<=0 && S.frenzyCd<=0) startFrenzy();
+  SFX.setComboPad(S.combo>=15?(S.combo>=700?4:S.combo>=350?3:S.combo>=80?2:1):-1);
+  if(S.combo>=700 && S.frenzy<=0 && S.frenzyCd<=0) startFrenzy();
   bubbleGain(b);
   if(S.eqItem===2 && Math.random()<0.15) chainBlast(b); // 爆竹:15%概率引爆连锁
   if(b.kind==="v") voidBlast(b); // 虚空泡:清屏
@@ -681,7 +681,7 @@ function renderShop(){
     const cur=idx===S.sheetIdx;
     const owned=S.ownedSheets.includes(idx);
     row.className="item"+(cur?" eq":"")+(owned?"":" lock");
-    row.innerHTML=`<div class="ic">▤</div><div class="nm">${s.name}<br><small>${s.focus} · 每泡¥${s.base} · ${s.dens}泡 · 稀有率×${s.rare}</small></div>
+    row.innerHTML=`<div class="ic">▤</div><div class="nm">${s.name}<br><small>${s.focus} · 每泡¥${s.base*10} · ${s.dens}泡 · 稀有率×${s.rare}</small></div>
       <div class="od">${cur?"使用中":(owned?"切换":("¥"+s.price.toLocaleString()+" 购买"))}</div>`;
     row.onclick=()=>{
       if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
@@ -746,11 +746,11 @@ function renderShop(){
     const has=S.ownedDesks.includes(idx);
     row.className="item"+(has?(S.curDesk===idx?" eq":""):" lock");
     row.innerHTML=`<div class="ic">🖥</div><div class="nm">${d.name}<br><small>${d.note}</small></div>
-      <div class="od">${has?(S.curDesk===idx?"使用中":"切换"):("🔒 换纸×"+d.unlock)}</div>`;
+      <div class="od">${has?(S.curDesk===idx?"使用中":"切换"):(d.unlock>=999?"🔒 敬请期待":"🔒 换纸×"+d.unlock)}</div>`;
     row.onclick=()=>{
       if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
       if(has){ S.curDesk=idx; SFX.ui(); toast("已切换到 "+d.name); renderShop(); }
-      else if(S.sheetCount>=d.unlock){ S.ownedDesks.push(idx); S.curDesk=idx; SFX.unlock(); toast("解锁了 "+d.name+"!"); renderShop(); }
+      else if(d.unlock<999 && S.sheetCount>=d.unlock){ S.ownedDesks.push(idx); S.curDesk=idx; SFX.unlock(); toast("解锁了 "+d.name+"!"); renderShop(); }
       else { SFX.ui(); toast("还未解锁 · "+d.note); }
     };
     ld.appendChild(row);
@@ -1009,7 +1009,7 @@ const SFX=(function(){
       src.connect(flt); flt.connect(g); g.connect(m);
       src.start(t); src.stop(t+dur+0.05);
     }catch(e){} },
-    /* 连击升段:i=0..3(20/100/500/1000连),柔和上行闪音,段越高越亮 */
+    /* 连击升段:i=0..3(15/80/350/700连),柔和上行闪音,段越高越亮 */
     combo(i){ try{ const t=ac().currentTime;
       const base=[392,523,659,784][i]||392, v=[0.13,0.16,0.19,0.22][i]||0.13;
       glide(180,120,t,0.25,v,"sine");            // 低音锤(柔)
@@ -1318,15 +1318,16 @@ function backToTitle(){
 }
 
 /* ================= 存档 ================= */
+const SAVE_VER=2; // 2026-08-24 数值复原:旧测试存档(巨额钱/高数值)一律作废
 function save(){
-  localStorage.setItem("bf_save",JSON.stringify({money:S.money,totalEarned:S.totalEarned,popTotal:S.popTotal,
+  localStorage.setItem("bf_save",JSON.stringify({ver:SAVE_VER,money:S.money,totalEarned:S.totalEarned,popTotal:S.popTotal,
     sheetIdx:S.sheetIdx,sheetCount:S.sheetCount,ownedSheets:S.ownedSheets,ownedItems:S.ownedItems,
     eqItem:S.eqItem,ownedDesks:S.ownedDesks,curDesk:S.curDesk,tree:S.tree}));
 }
 function load(){
   try{
     const j=JSON.parse(localStorage.getItem("bf_save")||"null");
-    if(!j) return;
+    if(!j||j.ver!==SAVE_VER){ localStorage.removeItem("bf_save"); return; }
     S.money=j.money||0; S.totalEarned=j.totalEarned||0; S.popTotal=j.popTotal||0;
     S.sheetIdx=j.sheetIdx||0; S.sheetCount=j.sheetCount||1;
     S.ownedSheets=j.ownedSheets||[0]; S.ownedItems=j.ownedItems||[0];
@@ -1368,7 +1369,7 @@ function frame(t){
   // 数值显示
   const vnum=document.getElementById("val-num");
   vnum.textContent=fmt(S.money);
-  vnum.className="num"+(S.combo>=500?" big":"");
+  vnum.className="num"+(S.combo>=350?" big":"");
   // 全屏闪白(狂热/连锁)
   if(S.flash>0){ S.flash-=dt; }
   draw();
@@ -1411,7 +1412,7 @@ function placeTitle(){
 function init(){
   load();
   loadSnd();
-  bgImage=new Image(); bgImage.src="01_泡泡经济素材/背景图/主界面桌面.png";
+  bgImage=new Image(); bgImage.src="01_泡泡经济素材/成品库/背景图/主界面桌面.png";
   membImg=new Image();
   membImg.onload=()=>{ fitPaperToMembrane(); try{ gridPopulate(SHEETS[S.sheetIdx].dens); }catch(e){} };
   membImg.src="01_泡泡经济素材/泡膜_空膜.png";  // 第一层: 空膜底纸(无泡, AI清理+剪影), 泡/破泡为第二层; onload时PAPER按膜自适应+重排
