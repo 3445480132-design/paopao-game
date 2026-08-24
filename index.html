@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>泡泡经济 · 灰盒原型</title>
+<style>
+:root{
+  --blue:#1a56db; --green:#4caf50; --orange:#ffb74d;
+  --wood:#d4a574; --ink:#1b1b1f; --panel:#f4f1ea;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#22262a;display:flex;align-items:center;justify-content:center;
+  font-family:"等线","Microsoft YaHei",sans-serif;user-select:none;-webkit-user-select:none}
+#stage{position:relative;width:1280px;height:720px;background:#d4a574;overflow:hidden;
+  border:2px solid #000;image-rendering:pixelated}
+canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+/* ---------- 顶部解压值(边框面板,按mockup) ---------- */
+#hud-value{position:absolute;top:12px;left:0;right:0;text-align:center;pointer-events:none;z-index:20}
+#hud-value .panel{display:inline-block;background:rgba(22,45,110,.85);border:2px solid #fff;border-radius:12px;
+  padding:3px 34px 8px;box-shadow:0 3px 0 rgba(0,0,0,.45), inset 0 0 14px rgba(255,255,255,.10);
+  min-width:200px}
+#hud-value .lab{font-size:12px;color:#cfe2ff;text-shadow:1px 1px 0 #000;letter-spacing:4px}
+#hud-value .num{font-family:Consolas,monospace;font-size:34px;font-weight:bold;color:#fff;
+  text-shadow:2px 2px 0 #000, 0 0 10px rgba(0,0,0,.35)}
+#hud-value .num.big{font-size:40px;color:#ffdf6b;text-shadow:2px 2px 0 #000}
+/* ---------- Combo 弹窗(临时) ---------- */
+#combo-pop{position:absolute;left:24px;top:90px;z-index:30;pointer-events:none;display:none;
+  background:rgba(43,93,224,.92);border:2px solid #fff;border-radius:10px;padding:8px 18px 10px;
+  box-shadow:0 4px 0 rgba(0,0,0,.35);text-align:center}
+#combo-pop .x{font-size:26px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #0a2a66}
+#combo-pop .ct{font-size:12px;color:#cfe0ff;margin-top:-2px;font-family:Consolas,monospace}
+#combo-pop .bar{width:150px;height:7px;background:#17408f;border-radius:3px;margin:6px auto 0;overflow:hidden}
+#combo-pop .bar i{display:block;height:100%;background:#7fe07f;width:100%}
+/* ---------- 狂热 ---------- */
+#frenzy-tag{position:absolute;top:112px;left:0;right:0;text-align:center;z-index:21;pointer-events:none;display:none;
+  color:#fff;font-size:22px;font-weight:bold;text-shadow:0 0 12px #ff8b00,2px 2px 0 #000;letter-spacing:6px}
+/* ---------- 右侧面板 ---------- */
+#shop{position:absolute;top:0;right:0;bottom:0;width:270px;background:rgba(244,241,234,.96);
+  border-left:2px solid #000;z-index:40;display:flex;flex-direction:column}
+#tabs{display:flex}
+.tab{flex:1;text-align:center;padding:10px 0;font-size:18px;border-bottom:2px solid #000;cursor:pointer}
+.tab.on{background:var(--blue);color:#fff}
+.tab.off{background:#cfc9bd;color:#444}
+#shop-body{flex:1;overflow-y:auto;padding:8px}
+.sec-title{background:var(--blue);color:#fff;font-size:14px;padding:6px 10px;cursor:pointer;
+  border:2px solid #000;margin-bottom:4px}
+.sec-title .ar{display:inline-block;width:14px;transition:transform .15s}
+.sec.collapsed .sec-title .ar{transform:rotate(-90deg)}
+.sec.collapsed .sec-body{display:none}
+.sec-title small{float:right;font-weight:normal;opacity:.8}
+.sec{margin-bottom:8px}
+.item{display:flex;align-items:center;gap:8px;padding:5px 6px;border:2px solid #bcb4a4;
+  border-radius:8px;margin-bottom:4px;background:#fff;cursor:pointer;font-size:13px}
+.item .ic{width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:#101a36;border:2px solid #000;border-radius:4px;overflow:hidden}
+.item .ic img{width:100%;height:100%;object-fit:contain}
+.item .nm{flex:1}
+.item .od{font-family:Consolas,monospace;font-size:12px;color:#555}
+.item.lock{opacity:.55;cursor:not-allowed}
+.item.lock .od{color:#b00}
+.item.eq{background:#dff0ff;border-color:var(--blue)}
+.item.eq .nm{color:var(--blue);font-weight:bold}
+.item.can{border-color:var(--green)}
+.item.bought .od{color:var(--green)}
+.item.dim{opacity:.4;cursor:default}
+/* ---------- 全屏技能树 ---------- */
+#tree{position:absolute;inset:0;background:linear-gradient(160deg,#0d1b3e,#1a1a2e);z-index:50;display:none;
+  color:#dde6ff;font-size:13px}
+#tree .close{position:absolute;right:14px;top:10px;color:#fff;font-size:22px;cursor:pointer;z-index:60}
+#tree .thead{display:flex;padding:16px 20px 0;gap:10px}
+#tree .th{font-size:19px;color:#fff;letter-spacing:4px;text-align:center;padding-bottom:9px;
+  border-bottom:2px solid rgba(255,255,255,.25)}
+#tree .thead .th:first-child{width:55%}
+#tree .thead .th:last-child{width:45%}
+#tree .cols{display:flex;height:calc(100% - 64px);padding:10px 20px 12px;gap:10px}
+#tree .left{width:55%;overflow-y:auto;display:flex;flex-direction:column}
+#tree .right{width:45%;overflow-y:auto;display:flex;flex-direction:column}
+#tree .left .trow{flex:1}
+#tree .right .gtitle{flex:none}
+#tree .right .trow{flex:1}
+.gtitle{margin:14px 0 8px;font-size:12px;color:#9fc3ff;letter-spacing:2px;
+  border-bottom:1px solid rgba(159,195,255,.35);padding-bottom:4px}
+.gtitle .gar{color:#7ec8ff;margin-right:6px}
+.dot{width:13px;height:13px;border:2px solid var(--dc,#888);background:rgba(255,255,255,.05);
+  border-radius:50%;flex-shrink:0}
+.dot.own{background:var(--dc,#4fa3ff);border-color:#fff;box-shadow:0 0 7px var(--dc,#4fa3ff)}
+.dot.ult{width:17px;height:17px;border-color:#ffd75e;background:rgba(255,215,94,.15)}
+.dot.ult.own{background:var(--dc,#ffd24a);border-color:#fff3c4;box-shadow:0 0 8px #ffd75e}
+.dot:hover{border-color:#fff}
+#ttip{position:absolute;z-index:70;pointer-events:none;display:none;max-width:240px;
+  background:rgba(20,24,44,.97);border:2px solid #ffd75e;border-radius:8px;padding:8px 10px;
+  font-size:11px;color:#dde6ff;line-height:1.6}
+#ttip .tc{color:#ffd75e}
+.trow{display:flex;align-items:center;gap:8px;padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.06)}
+.trow .tico{width:32px;height:32px;background:#0e1730;border:2px solid #39508f;flex-shrink:0;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.trow .tico img{width:100%;height:100%;object-fit:contain}
+.trow .tname{width:92px;flex-shrink:0;font-size:12px}
+.trow .nodes{flex:1;display:flex;align-items:center;gap:3px;padding-right:6px}
+.dia{width:15px;height:15px;background:rgba(255,255,255,.06);border:2px solid #7f8bb8;
+  transform:rotate(45deg);flex-shrink:0}
+.dia.own{background:#4fa3ff;border-color:#bfe0ff;box-shadow:0 0 6px #4fa3ff}
+.dia.ult{width:20px;height:20px;border-color:#ffd75e;background:rgba(255,215,94,.15)}
+.dia.ult.own{background:#ffd75e;border-color:#fff3c4;box-shadow:0 0 8px #ffd75e}
+.line{flex:1;min-width:6px;height:2px;background:#7f8bb8}
+.trow.tlk{opacity:.5}
+.dia:hover{border-color:#fff}
+/* ---------- 设置面板(左下) ---------- */
+#gear{position:absolute;left:14px;bottom:14px;width:44px;height:44px;background:rgba(0,0,0,.30);
+  border:2px solid #fff;border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:45}
+#gear img{width:80%;height:80%;object-fit:contain;display:block}
+#setpanel{position:absolute;left:14px;bottom:56px;width:230px;background:var(--panel);border:2px solid #000;
+  border-radius:12px;padding:12px;z-index:46;display:none;font-size:13px}
+#setpanel button{width:100%;margin-top:6px;padding:7px;background:var(--blue);color:#fff;border:2px solid #000;
+  font-size:13px;cursor:pointer;border-radius:8px}
+/* ---------- 提示条 ---------- */
+#toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);
+  color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;z-index:60;display:none;text-align:center}
+/* ---------- 标题界面(素材整图铺底+热区) ---------- */
+#title{position:absolute;inset:0;z-index:80;background:#10151c}
+#title>img{width:100%;height:100%;object-fit:cover;display:block}
+#title .hit{position:absolute;cursor:pointer}
+#t-go{left:50%;top:302px;transform:translateX(-50%);width:340px;height:112px}
+#t-go #startBtn{width:100%;height:100%;display:block;pointer-events:none;
+  transition:transform .1s ease, filter .1s ease; transform-origin:center;
+  transform:scale(1.10);}  /* 常态放大10%罩住原按钮+阴影;按下最大缩到1.04仍比原按钮大,永不露底 */
+#t-go:active #startBtn{transform:scale(1.07) translateY(1px);filter:brightness(.84)}
+#t-exit{left:14px;top:10px;width:64px;height:64px}
+/* ---------- 开场暗幕:点一下进入(音频手势解锁) ---------- */
+#wake{position:absolute;inset:0;z-index:90;background:rgba(8,12,22,.88);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  transition:opacity .55s}
+#wake .wtitle{font-family:'Courier New',monospace;font-size:38px;letter-spacing:14px;color:#cfe3ff;
+  text-shadow:0 0 18px rgba(120,190,255,.55);font-weight:bold}
+#wake .wtip{font-family:'Courier New',monospace;font-size:16px;letter-spacing:6px;color:#8fb8e8;
+  animation:wakePulse 1.6s ease-in-out infinite}
+/* 桌面预览:只显示桌面背景,隐藏全部玩法UI(body.deskonly 由 __DESK_ONLY 切换) */
+body.deskonly #hud-value,body.deskonly #frenzy-tag,body.deskonly #combo-pop,
+body.deskonly #shop,body.deskonly #gear,body.deskonly #setpanel,body.deskonly #toast,
+body.deskonly #title,body.deskonly #wake
+{display:none!important}
+@keyframes wakePulse{0%,100%{opacity:.45}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" width="1280" height="720"></canvas>
+
+  <div id="hud-value"><div class="panel"><div class="lab">解压值</div><div class="num" id="val-num">0</div></div></div>
+  <div id="frenzy-tag">狂 热 · 10×</div>
+  <div id="combo-pop"><div class="x" id="cb-mult">×1</div><div class="ct" id="cb-count">[0 连击]</div><div class="bar"><i id="cb-bar"></i></div></div>
+
+  <div id="shop">
+    <div id="tabs">
+      <div class="tab on" id="tab-shop">🛒 商店</div>
+      <div class="tab off" id="tab-tree">🌳 技能树</div>
+    </div>
+    <div id="shop-body">
+      <div class="sec" id="sec-sheet">
+        <div class="sec-title"><span class="ar">▾</span> 泡泡纸 <small id="she-cnt">1/7</small></div>
+        <div class="sec-body" id="list-sheet"></div>
+      </div>
+      <div class="sec" id="sec-item">
+        <div class="sec-title"><span class="ar">▾</span> 道具 <small id="itm-cnt">10</small></div>
+        <div class="sec-body" id="list-item"></div>
+      </div>
+      <div class="sec" id="sec-desk">
+        <div class="sec-title"><span class="ar">▾</span> 桌面 <small id="dsk-cnt">1/5</small></div>
+        <div class="sec-body" id="list-desk"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gear"><img src="01_泡泡经济素材/界面元素/齿轮.png" alt="设置"></div>
+  <div id="setpanel"><button id="btn-music" onclick="toggleMusic()">音乐: 开</button><button id="btn-sfx" onclick="toggleSfx()">音效: 开</button><button onclick="backToTitle()">回到主页面</button><button onclick="resetSave()">重置存档</button></div>
+
+  <div id="toast"></div>
+
+  <div id="title">
+    <img id="titleBg" src="01_泡泡经济素材/背景图/标题背景.png" alt="">
+    <div class="hit" id="t-go" title="开始游戏">
+      <img id="startBtn" src="01_泡泡经济素材/界面元素/按钮开始_椭圆.png" alt="开始游戏">
+    </div>
+    <div class="hit" id="t-exit" title="退出"></div>
+  </div>
+
+  <div id="wake">
+    <div class="wtitle">泡 泡 经 济</div>
+    <div class="wtip">点 击 进 入</div>
+  </div>
+
+  <div id="tree">
+    <div class="close" onclick="closeTree()">✕</div>
+    <div id="ttip"></div>
+    <div class="thead"><div class="th">道具技能</div><div class="th">通用升级</div></div>
+    <div class="cols">
+      <div class="left" id="tree-left"></div>
+      <div class="right" id="tree-right"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* 步骤开关:1=布局骨架验收 2=点泡 3=Combo 4=商店购买 5=技能树/标题 */
+const STEP=5;
+/* ================= 数据(策划案数值) ================= */
+const SHEETS=[ // 泡泡纸是消耗品:每张都要重新购买;theme=纸的样貌(暂无素材,先代码配色)
+  {name:"基础膜", price:25, base:100, dens:50,  rare:1.0, tier:"—", focus:"均衡",
+    theme:{bg:"#fdfbf4", edge:"rgba(0,0,0,.28)", stars:0}},
+  {name:"琉璃膜", price:100, base:40,  dens:60,  rare:1.2, tier:1, focus:"基数型",
+    theme:{bg:"#eaf3ff", edge:"rgba(120,170,255,.9)", stars:0}},
+  {name:"冰霜膜", price:100, base:20,  dens:120, rare:1.2, tier:1, focus:"密度型",
+    theme:{bg:"#e8fbff", edge:"rgba(140,220,255,.95)", cryst:1}},
+  {name:"棱镜膜", price:2000, base:180, dens:85,  rare:1.7, tier:2, focus:"基数型",
+    theme:{bg:"#f6efff", edge:"rgba(190,140,255,.9)", stars:0}},
+  {name:"熔岩膜", price:2000, base:80,  dens:300, rare:1.7, tier:2, focus:"密度型",
+    theme:{bg:"#ffe9d6", edge:"rgba(255,140,70,.95)", stars:0}},
+  {name:"深海膜", price:50000, base:400, dens:160, rare:2.5, tier:3, focus:"基数型",
+    theme:{bg:"#1d3a5c", edge:"rgba(90,140,255,.9)", stars:1}},
+  {name:"星辰膜", price:50000, base:400, dens:300, rare:3.0, tier:3, focus:"全能型",
+    theme:{bg:"#161c40", edge:"rgba(140,150,255,.9)", stars:2}},
+];
+const ICONS="01_泡泡经济素材/道具图标/";
+const ITEMS=[
+  {name:"手指",       price:0,  type:"手动",    icon:"👆", desc:"手动点击",                    img:ICONS+"道具0.png"},
+  {name:"缝衣针",     price:10,  type:"手动",    icon:"🪡", desc:"针形光标 · 20%暴击×3",    img:ICONS+"道具1.png"},
+  {name:"爆竹",       price:50,  type:"被动触发",icon:"🧨", desc:"戳泡15%爆炸连锁",          img:ICONS+"道具3.png"},
+  {name:"随身听",     price:200, type:"辅助",    icon:"📻", desc:"换歌",                img:ICONS+"道具2.png"},
+  {name:"弹球炮台",   price:500, type:"手动",    icon:"🔮", desc:"点击发射弹球,路径引爆",   img:ICONS+"道具4.png"},
+  {name:"玩具赛车",   price:1500, type:"手动",    icon:"🏎", desc:"点击碾过一条泡线",         img:ICONS+"道具6.png"},
+  {name:"激光发射器", price:5000, type:"手动",    icon:"🔦", desc:"点击横扫一条泡带",         img:ICONS+"道具5.png"},
+  {name:"弹弓",       price:15000, type:"手动",   icon:"🏹", desc:"点击抛物线落点爆炸",       img:ICONS+"道具7.png"},
+  {name:"猫咪",       price:50000, type:"持续自动",icon:"🐱", desc:"每1.5s自动戳一次",        img:ICONS+"道具8.png"},
+  {name:"反物质湮灭器",price:200000,type:"冷却(60s)",icon:"🌌", desc:"点击清屏,60s冷却",     img:ICONS+"道具9.png"},
+];
+const DESKS=[
+  {name:"家里的书桌", unlock:0,    note:"初始"},
+  {name:"课桌",       unlock:3,    note:"换到第3张泡泡纸"},
+  {name:"办公桌",     unlock:8,    note:"第8张"},
+  {name:"电脑桌",     unlock:15,   note:"第15张"},
+  {name:"宇宙台",     unlock:25,   note:"第25张"},
+];
+/* 8种泡: 概率暂时调高便于全种目视, 后续再平衡 */
+const BUBBLES=[
+  {key:"t", name:"透明泡", mult:1,  prob:34.0,  color:"#eaeaea", r:26, desc:"×1"},
+  {key:"b", name:"蓝色泡", mult:2,  prob:26.0,  color:"#9cc7ff", r:29, desc:"×2"},
+  {key:"s", name:"黄铜泡", mult:5,  prob:12.0,  color:"#c8913a", r:26, desc:"×5"},
+  {key:"g", name:"金泡",   mult:25, prob:10.0,  color:"#ffd24a", r:26, desc:"×25"},
+  {key:"r", name:"彩虹泡", mult:100, prob:6.0,   color:"#ff8bd0", r:26, desc:"×100"},
+  {key:"d", name:"暗黑泡", mult:500, prob:4.0,   color:"#4a2a66", r:26, desc:"×500"},
+  {key:"f", name:"分裂泡", mult:2500,prob:4.0,   color:"#3ddc84", r:24, desc:"×2500"},
+  {key:"v", name:"虚空泡", mult:15000,prob:4.0,  color:"#050505", r:30, desc:"×15000 清屏"},
+];
+/* Combo 倍率区间和狂热 */
+const COMBO_TABLE=[[20,1],[100,2],[500,3,0],[1000,5,0]]; // 下限->倍率(纯展示),狂热独立
+function comboMult(c){ // 技能:倍率强化
+  let m=1; if(c>=1000) m=10; else if(c>=500) m=5; else if(c>=100) m=3; else if(c>=20) m=2;
+  m*=1+0.08*S.tree.un[1];
+  return Math.round(m*100)/100;
+}
+
+/* ================= 状态 ================= */
+const S={
+  money:0, totalEarned:0, popTotal:0, combo:0, comboTime:0, frenzy:0, frenzyCd:0,
+  sheetIdx:0, sheetCount:1, sheetLeft:0, ownedSheets:[0],
+  ownedItems:[0], eqItem:0, ownedDesks:[0], curDesk:0, maxChain:0, flash:0, emptyWarn:false,
+  cd:0, catT:1,
+  tree:{it:[0,0,0,0,0,0,0,0,0,0], un:new Array(13).fill(0)}, // 技能树:道具10行5级 + 通用(Combo4+连锁1+类型8)5级
+};
+let bubbles=[]; let parts=[]; let floats=[]; let bgImage=null; let paperImg=null; let membImg=null; let lastT=0;
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+const ASPECT=1280/720;
+
+/* ================= 通用 ================= */
+function int(x){return Math.floor(x)}
+function fmt(n){ return n>=1e6? n.toLocaleString("zh-CN",{maximumFractionDigits:0}) : n.toLocaleString(); }
+function toast(msg,dur=2000){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block";
+  clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",dur); }
+function pickBubble(kind){ // kind=true 表示随机抽取
+  if(kind && kind!==true) return kind;
+  let p=Math.random()*100, acc=0;
+  for(const bb of BUBBLES){
+    let pr=bb.prob*SHEETS[S.sheetIdx].rare;
+    const ri=["b","s","g","r","d","f","v","t"].indexOf(bb.key); // 技能:泡泡类型概率(顺序=UN_TREE铺平序)
+    if(ri>=0) pr*=1+0.08*S.tree.un[5+ri];
+    acc+=pr; if(p<=acc) return bb.key;
+  }
+  return "t";
+}
+function gain(v, x, y, color){
+  const mult=comboMult(S.combo)* (S.frenzy>0?10:1);
+  const val=Math.round(10*SHEETS[S.sheetIdx].base*mult);
+  // val 由调用处传入的 v 覆盖(连锁各环不同),10*base*mult 仅作兜底
+  const real=v!=null?v:val;
+  S.money+=real; S.totalEarned+=real;
+  floats.push({x,y,txt:"+"+fmt(real),color:color||"#fff",t:0});
+}
+
+/* ================= 泡泡生成 ================= */
+const PLAY_L={x:0,y:0,w:1280-270,h:720}; // 画布活动区(右侧商店除外)
+const PAPER={x:350,y:130,w:580,h:460};   // 泡泡纸:宽随行列定制(见latticeFor), 宽纸中心左移避开商店栏
+const PAD={x:30,y:24};   // 布局内边距: 泡区避开膜边框/四角褶皱/光泽, 四周留边
+const GRID={50:[5,9],60:[6,10],85:[7,12],120:[10,12],160:[10,16],300:[15,20]}; // [行数,列数]: 行少列多,凑无间隙矩形
+function latticeFor(dens){ // 膜纵横比与行列联配: w/h=列数/行数→泡格近正方, 行列间隙均匀同宽
+  const g=GRID[dens]||[6,8];
+  const pw=Math.round((PAPER.h-2*PAD.y)*g[1]/g[0]+2*PAD.x);
+  return Math.min(pw,808); // 商店栏(x>=1010)前留边
+}
+function fitPaperToMembrane(){ // 基础膜:玩法区按行列适配(高固定,宽按GRID定制, 交互/生成区=膜范围)
+  PAPER.w=latticeFor(SHEETS[S.sheetIdx].dens);
+  PAPER.x=Math.round((PAPER.w>740?600:640)-PAPER.w/2);
+}
+function genBubble(kind){
+  const bb={
+    id:S.popTotal+Math.random(), x:0, y:0, r:26, kind:"t", mult:1,
+    bloom:true, spawnT:0.15, busted:false, tick:0, z:Math.random()};
+  bb.kind=pickBubble(kind);
+  const def=BUBBLES.find(b=>b.key===bb.kind);
+  bb.r=def.r;
+  return bb;
+}
+/* 泡泡纸:泡在纸内密排无空位——行/列按GRID定制(行少列多), 膜比例与行列联配, 行列间隙均匀 */
+function gridPopulate(n){
+  bubbles=[];
+  const g=GRID[n]||detectGrid(n);
+  const rows=g[0], k=g[1];
+  const w=PAPER.w-2*PAD.x, h=PAPER.h-2*PAD.y;   // 泡区=膜内缩(避开边框/角褶/光泽)
+  n=k*rows; S.sheetLeft=n; // 泡数对齐到整行满铺
+  const cellH=h/rows;
+  const rmax=Math.min(w/k,cellH)*0.47; // 半径按行列联配格自适应; 间隙≈6%格宽同宽, 无大空
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<k;c++){
+      const bb=genBubble(true);
+      bb.r=rmax; // 所有泡一律同尺寸(用户要求:不分类型大小一致)
+      bb.tx=PAPER.x+PAD.x+w*(c+0.5)/k;   // 所有行同一套k列槽位
+      bb.ty=PAPER.y+PAD.y+cellH*(r+0.5);
+      bb.x=bb.tx; bb.y=bb.ty; bb.spawnT=1;      // 初始直接铺好
+      bubbles.push(bb);
+    }
+  }
+}
+function detectGrid(n){ // 兜底: 未知密度按膜比例搜索(行少优先)
+  const w=PAPER.w-2*PAD.x, h=PAPER.h-2*PAD.y;
+  const t=w/h; let best=null;
+  for(let rows=3;rows<=15;rows++){
+    const k=Math.max(2,Math.round(t*rows));
+    const dd=Math.abs(k*rows-n);
+    if(!best||dd<best.dd) best={k:k,rows:rows,dd:dd};
+  }
+  return [best.rows,best.k];
+}
+
+/* ================= 粒子/浮字 ================= */
+function explode(bx,by,r,color){
+  const n=6+int(Math.random()*7); // 6-12片
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=70+Math.random()*140;
+    parts.push({x:bx,y:by,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-60,r:1+Math.random()*3,t:0,life:0.3,color});
+  }
+}
+function floatsFly(){
+  for(const f of floats){ f.t+=1/60;
+    if(f.t>0.5){ f.dead=true; }
+    f.y-=52*(1/60);
+  }
+  floats=floats.filter(f=>!f.dead);
+}
+
+/* ================= 核心:戳泡 ================= */
+let dragging=false, dragLastX=0, dragLastY=0;
+function hitBubble(x,y){
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b=bubbles[i]; if(b.busted||b.spawnT<0.85) continue;
+    const dx=x-b.x, dy=y-b.y;
+    if(dx*dx+dy*dy<=b.r*b.r*1.15) return b;
+  }
+  return null;
+}
+function bubbleGain(b,extra=1){
+  const def=BUBBLES.find(x=>x.key===b.kind);
+  let m=def.mult;
+  // 缝衣针: 暴击 ×3
+  let crit=false;
+  const critRate=0.2+0.03*S.tree.it[1]; // 技能:缝衣针暴击率
+  if(S.eqItem===1 && Math.random()<critRate){ m*=3; crit=true; }
+  const gain=Math.round(10*SHEETS[S.sheetIdx].base*m*comboMult(S.combo)*(S.frenzy>0?10:1)*extra
+    *(1+0.05*S.tree.it[0])); // 技能:手指(手动加成)
+  S.money+=gain; S.totalEarned+=gain;
+  floats.push({x:b.x,y:b.y-10,txt:(crit?"暴击!+"+fmt(gain):"+"+fmt(gain)),color:crit?"#ff4d36":def.color,t:0});
+  explode(b.x,b.y,b.r,def.color);
+  S.sheetLeft=Math.max(0,S.sheetLeft-1);
+  playPop(b.kind);
+  return gain;
+}
+function burstIt(b){ // 戳破一个泡:原地留下破泡残骸
+  if(b.busted) return;
+  b.busted=true;
+  S.popTotal++;
+  if(S.comboTime>0) S.combo++; else S.combo=1;
+  S.comboTime=0.5+0.04*S.tree.un[0]; // 技能:计时器延长
+  const C=[20,100,500,1000];
+  if(C.includes(S.combo)) SFX.combo(C.indexOf(S.combo)); // 连击升段音
+  SFX.setComboPad(S.combo>=20?(S.combo>=1000?4:S.combo>=500?3:S.combo>=100?2:1):-1);
+  if(S.combo>=1000 && S.frenzy<=0 && S.frenzyCd<=0) startFrenzy();
+  bubbleGain(b);
+  if(S.eqItem===2 && Math.random()<0.15) chainBlast(b); // 爆竹:15%概率引爆连锁
+  if(b.kind==="v") voidBlast(b); // 虚空泡:清屏
+  if(S.sheetLeft<=0 && !hasAlive()) nextSheetGone();
+}
+function hasAlive(){
+  for(const b of bubbles) if(!b.busted) return true;
+  return false;
+}
+function popBubble(b){ if(STEP<2) return; burstIt(b); }
+function voidBlast(b){
+  chainMsg={txt:"虚空清屏!",big:true,t:0};
+  let chain=0;
+  for(const o of [...bubbles]){ // 快照:防金泡重生死循环
+    if(o.busted||o===b) continue;
+    o.busted=true; S.popTotal++; chain++;
+    bubbleGain(o);
+    if(chain>=45) break;
+  }
+}
+function chainBlast(b){
+  let chain=0; const R=95+15*S.tree.it[2]; // 技能:爆竹半径
+  const extra=1+0.05*S.tree.un[4]; // 技能:连锁收益
+  for(const o of bubbles){
+    if(o.busted||o===b) continue;
+    const d=Math.hypot(o.x-b.x,o.y-b.y);
+    if(d<=R){ o.busted=true; S.popTotal++; S.sheetLeft=Math.max(0,S.sheetLeft-1);
+      chain++;
+      bubbleGain(o,extra);
+      explode(o.x,o.y,o.r,"#ff9d3c"); // 火光联动
+      if(chain>=40) break;
+    }
+  }
+  if(chain>=3){
+    chainMsg={txt:chain>=30?"SUPER CHAIN!!":chain>=10?"MEGA CHAIN!!!":"CHAIN!",
+      big:chain>=10,t:0};
+  }
+}
+let chainMsg=null;
+function nextSheetGone(){ // 纸戳完了:不自动换,提示去买(消耗品)
+  if(!S.emptyWarn){
+    S.emptyWarn=true;
+    toast("这张纸用完了!去商店换一张纸吧");
+  }
+}
+function frenzyCdMax(){ return Math.max(8,30-4*S.tree.un[3]); } // 技能:冷却缩短
+function startFrenzy(){
+  S.frenzy=8+1.5*S.tree.un[2]; S.frenzyCd=frenzyCdMax(); S.flash=0.5; // 技能:狂热时长
+  const t=document.getElementById("frenzy-tag"); t.style.display="block";
+  SFX.frenzy();
+  toast("狂热模式!! 全产出×10");
+}
+function frenzyTick(dt){
+  if(S.frenzy>0){
+    S.frenzy-=dt; S.frenzyCd=frenzyCdMax(); // 狂热期间保持冷却
+    if(S.frenzy<=0){ S.frenzy=0;
+      const t=document.getElementById("frenzy-tag"); t.style.display="none"; }
+  }else if(S.frenzyCd>0){
+    S.frenzyCd=Math.max(0,S.frenzyCd-dt); // 狂热后冷却递减
+  }
+}
+function playPop(kind){
+  try{
+    const ac=window._ac||(window._ac=new (window.AudioContext||window.webkitAudioContext)());
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type="triangle"; o.frequency.value=kind==="v"?60:(kind==="g"?880:300+Math.random()*260);
+    g.gain.setValueAtTime(0.12, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.14);
+    o.connect(g); g.connect(SFX.mx()); o.start(); o.stop(ac.currentTime+0.15);
+  }catch(e){}
+}
+
+/* 桌面素材(主界面桌面.png)已验收: 完整玩法。桌面预览时可临时改回 true */
+window.__DESK_ONLY=false;
+/* 两层素材已接入玩法: 膜=完整泡膜素材(基础膜), 泡=圆泡素体素材(生成/破坏层)。预览模式已关闭 */
+window.__MEMB_PREVIEW=false;
+if((window.__DESK_ONLY||window.__MEMB_PREVIEW) && typeof document!=="undefined" && document.body) document.body.classList.add("deskonly");
+/* ================= Canvas 渲染 ================= */
+function draw(){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  // 背景(图片未加载完成时先不画,避免 drawImage 抛异常)
+  if(bgImage && bgImage.complete){ // cover 居中: 1376×768 图适配 1280×720 画布不拉伸
+    const bs=Math.max(W/bgImage.width,H/bgImage.height), dbw=bgImage.width*bs, dbh=bgImage.height*bs;
+    const bdx=(W-dbw)/2, bdy=(H-dbh)/2;
+    ctx.drawImage(bgImage,bdx,bdy,dbw,dbh);
+    if(window.__MEMB_PREVIEW){ // 第二层: 完整泡膜按原位贴(原图区域(388,238) 582×450, 同background缩/裁)
+      if(membImg && membImg.complete){
+        ctx.drawImage(membImg, 388*bs+bdx, 238*bs+bdy, 582*bs, 450*bs);
+      }
+      return; // 预览: 不画泡/纸/玩法
+    }
+  }
+  if(window.__DESK_ONLY){ return; } // 桌面预览:不再画纸/泡/玩法
+  // 泡泡纸:桌面上的一张纸,配色随膜类型变化(素材到位前用代码画的色)
+  const px=PAPER.x, py=PAPER.y, pw=PAPER.w, ph=PAPER.h;
+  const th=SHEETS[S.sheetIdx].theme;
+  const baseIsMemb=S.sheetIdx===0 && membImg && membImg.complete;
+  if(!baseIsMemb){
+    ctx.fillStyle="rgba(0,0,0,.20)";
+    rrect(px+5,py+7,pw,ph,8); ctx.fill();
+  }
+  if(baseIsMemb){
+    // 基础膜第一层:空膜素材(PAPER已按膜比例fit, 无代码框, 交互区=膜全宽)
+    ctx.drawImage(membImg, px, py, pw, ph);
+  } else if(S.sheetIdx===0 && paperImg && paperImg.complete){
+    // 旧基础膜:透明泡纸素材(透出桌面, 泡圈有对比)
+    ctx.save();
+    rrect(px,py,pw,ph,8); ctx.clip();
+    ctx.drawImage(paperImg,px,py,pw,ph);
+    ctx.restore();
+  } else { ctx.fillStyle=th.bg; rrect(px,py,pw,ph,8); ctx.fill(); }
+  if(!baseIsMemb){
+    ctx.strokeStyle=th.edge; ctx.lineWidth=2.5;
+    rrect(px,py,pw,ph,8); ctx.stroke();
+  }
+  // 膜装饰:星点/冰晶
+  if(th.stars){
+    ctx.fillStyle=th.stars===2?"rgba(255,255,255,.8)":"rgba(255,255,255,.55)";
+    for(let i=0;i<26;i++){
+      const sx=px+((i*137+53)%97)/97*pw, sy=py+((i*89+31)%89)/89*ph;
+      ctx.fillRect(sx,sy,th.stars===2?2:1.5,th.stars===2?2:1.5);
+    }
+  }
+  if(th.cryst){
+    ctx.strokeStyle="rgba(150,220,255,.8)"; ctx.lineWidth=1;
+    for(let i=0;i<8;i++){
+      const cx=px+((i*113+17)%90)/90*pw, cy=py+((i*71+9)%95)/95*ph;
+      ctx.beginPath(); ctx.moveTo(cx-8,cy); ctx.lineTo(cx+8,cy);
+      ctx.moveTo(cx,cy-8); ctx.lineTo(cx,cy+8); ctx.stroke();
+    }
+  }
+  if(!baseIsMemb){
+    ctx.font="11px 等线,Microsoft YaHei";
+    ctx.fillStyle="rgba(0,0,0,.28)"; ctx.textAlign="right";
+    ctx.fillText(SHEETS[S.sheetIdx].name,px+pw-10,py+ph-10);
+    ctx.textAlign="left";
+  }
+  // 泡 + 破泡残骸
+  for(const b of bubbles){
+    const def=BUBBLES.find(x=>x.key===b.kind);
+    if(b.busted){ drawBusted(b,def); continue; }
+    drawBubble(b, def);
+  }
+  // 粒子
+  for(const p of parts){
+    p.t+=1/60;
+    p.x+=p.vx/60; p.y+=p.vy/60; p.vy+=260/60;
+    const a=Math.max(0,1-p.t/p.life);
+    ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    ctx.fillRect(p.x,p.y,p.r*2,p.r*2);
+  }
+  ctx.globalAlpha=1;
+  parts=parts.filter(p=>p.t<p.life);
+  // 道具飞行体(弹球/赛车/激光/石块)
+  for(const f of flyers){
+    const e=Math.min(1,f.t);
+    const fx=f.x+(f.tx-f.x)*e;
+    let fy=f.y+(f.ty-f.y)*e;
+    if(f.kind==="sling") fy-=Math.sin(Math.PI*e)*90;
+    if(f.kind==="cannon"){
+      ctx.fillStyle="rgba(120,180,255,.5)"; ctx.beginPath(); ctx.arc(fx,fy,12,0,7); ctx.fill();
+      ctx.fillStyle="#e8f3ff"; ctx.beginPath(); ctx.arc(fx,fy,6,0,7); ctx.fill();
+    }else if(f.kind==="car"){
+      ctx.fillStyle="#e63946"; ctx.fillRect(fx-14,fy-8,30,14);
+      ctx.fillStyle="#222"; ctx.fillRect(fx-10,fy+4,7,5); ctx.fillRect(fx+3,fy+4,7,5);
+      ctx.fillStyle="#7ec8ff"; ctx.fillRect(fx-6,fy-6,8,6);
+    }else if(f.kind==="laser"){
+      ctx.strokeStyle="rgba(255,236,120,.8)"; ctx.lineWidth=6;
+      ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(PAPER.x+PAPER.w+12,fy); ctx.stroke();
+      ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(fx,fy,5,0,7); ctx.fill();
+    }else if(f.kind==="sling"){
+      ctx.fillStyle="#8a6a48"; ctx.beginPath(); ctx.arc(fx,fy,7,0,7); ctx.fill();
+      ctx.strokeStyle="rgba(255,183,77,.6)"; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(fx-12,fy-12); ctx.lineTo(fx+14,fy+14); ctx.stroke();
+    }
+  }
+  // 浮字
+  for(const f of floats){
+    const a=Math.max(0,0.6-f.t*1.8);
+    ctx.globalAlpha=a;
+    ctx.font="bold 20px Consolas,monospace";
+    ctx.strokeStyle="#000"; ctx.lineWidth=3;
+    ctx.strokeText(f.txt,f.x,f.y); ctx.fillStyle=f.color; ctx.fillText(f.txt,f.x,f.y);
+  }
+  ctx.globalAlpha=1;
+  // 全屏闪白
+  if(S.flash>0){ ctx.fillStyle="rgba(255,255,255,"+(S.flash*0.55).toFixed(2)+")"; ctx.fillRect(0,0,W,H); }
+  // CHAIN 大字
+  if(chainMsg){
+    chainMsg.t+=1/60;
+    const a=Math.max(0,1-chainMsg.t/1.4);
+    ctx.globalAlpha=a;
+    ctx.font="bold "+(chainMsg.big?56:34)+"px Consolas,monospace";
+    ctx.textAlign="center";
+    ctx.strokeStyle="#5c2800"; ctx.lineWidth=6;
+    const cfw=PAPER.x+PAPER.w/2;
+    ctx.strokeText(chainMsg.txt,cfw,180-chainMsg.t*40);
+    ctx.fillStyle="#ffd75e";
+    ctx.fillText(chainMsg.txt,cfw,180-chainMsg.t*40);
+    ctx.textAlign="left";
+    ctx.globalAlpha=1;
+    if(chainMsg.t>1.4) chainMsg=null;
+  }
+  floatsFly();
+}
+function rrect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function drawBusted(b,def){ // 破泡残骸:统一基础破泡素体(像素剪影),未加载时回退代码版
+  const im=sprCache.k;
+  if(im && im.complete){
+    const size=b.r*2.05/(SPRP.k||.9); // 统一破泡尺寸:与完整泡视觉直径一致
+    const sm=ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(im, b.x-size/2, b.y-size/2, size, size);
+    ctx.imageSmoothingEnabled=sm;
+    return;
+  }
+  ctx.save();
+  ctx.translate(b.x,b.y);
+  ctx.fillStyle="rgba(190,195,205,.55)";
+  ctx.strokeStyle="rgba(90,95,105,.55)";
+  ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.ellipse(0,0,b.r*0.85,b.r*0.32,0,0,7); ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-b.r*0.6,0); ctx.lineTo(-b.r*0.25,b.r*0.14);
+  ctx.lineTo(b.r*0.1,-b.r*0.12); ctx.lineTo(b.r*0.45,b.r*0.06);
+  ctx.stroke();
+  ctx.restore();
+}
+const SPR={
+  "t":"01_泡泡经济素材/泡泡/圆泡素体.png",  // 正式素体: 像素级抠取的完整泡(含圈+高光), 透明剪影
+  "k":"01_泡泡经济素材/泡泡/破泡素体.png",  // 破裂残留素体: 断续壳+裂痕+残留膜面
+  "r":"01_泡泡经济素材/泡泡/彩虹泡素体.png", // 彩虹泡×100: 定稿掩码+AI彩虹色回采
+  "b":"01_泡泡经济素材/泡泡/蓝泡素体.png",
+  "s":"01_泡泡经济素材/泡泡/黄铜泡素体.png",
+  "g":"01_泡泡经济素材/泡泡/金泡素体.png",
+  "d":"01_泡泡经济素材/泡泡/暗黑泡素体.png",
+  "f":"01_泡泡经济素材/泡泡/分裂泡素体.png",
+  "v":"01_泡泡经济素材/泡泡/虚空泡素体.png",
+};
+/* 各素材泡内容占图比例(量测): 用来统一视觉直径——不分类型大小一样 */
+const SPRP={"t":.844,"k":.938,"r":.927,"b":.896,"s":.677,"g":.677,"d":.865,"f":.688,"v":.854}; // 0824素体实测bbox/96 (f按主泡66px计,小泡放宽)
+function sprSize(b){ return b.r*2.05/(SPRP[b.kind]||.85); } // 视觉直径=2.05r, 相邻相切微叠, 密度铺满
+let sprCache={};
+function loadSpr(){
+  for(const k in SPR){ const im=new Image(); im.src=SPR[k]; sprCache[k]=im; }
+}
+function drawBubble(b,def){
+  const size=sprSize(b);
+  const im=sprCache[b.kind];
+  if(im && im.complete){
+    // 像素风: 泡素材关闭平滑, 保留颗粒感
+    const sm=ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(im, b.x-size/2, b.y-size/2, size, size);
+    ctx.imageSmoothingEnabled=sm;
+  } else {
+    ctx.fillStyle=def.color; ctx.strokeStyle="rgba(255,255,255,.8)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="rgba(255,255,255,.75)";
+    ctx.beginPath(); ctx.arc(b.x-b.r*0.32,b.y-b.r*0.38,b.r*0.22,0,7); ctx.fill();
+  }
+}
+
+/* ================= 商店渲染 ================= */
+function renderShop(){
+  // 泡泡纸(消耗品:每张都要买,戳完即废)
+  const ls=document.getElementById("list-sheet");
+  ls.innerHTML="";
+  SHEETS.forEach((s,idx)=>{
+    const row=document.createElement("div");
+    const cur=idx===S.sheetIdx;
+    const owned=S.ownedSheets.includes(idx);
+    row.className="item"+(cur?" eq":"")+(owned?"":" lock");
+    row.innerHTML=`<div class="ic">▤</div><div class="nm">${s.name}<br><small>${s.focus} · 每泡¥${s.base} · ${s.dens}泡 · 稀有率×${s.rare}</small></div>
+      <div class="od">${cur?"使用中":(owned?"切换":("¥"+s.price.toLocaleString()+" 购买"))}</div>`;
+    row.onclick=()=>{
+      if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
+      if(!owned && S.money<s.price){ SFX.ui(); toast("解压值不足(需 ¥"+s.price.toLocaleString()+")"); return; }
+      if(!owned){ S.money-=s.price; S.ownedSheets.push(idx); }
+      S.sheetIdx=idx; S.sheetCount++; S.emptyWarn=false;
+      fitPaperToMembrane();
+      gridPopulate(s.dens);
+      SFX.sheet();
+      toast(owned?"已换上 "+s.name:"一张"+s.name+"铺在桌上!");
+      renderShop();
+    };
+    ls.appendChild(row);
+  });
+  // 道具
+  const li=document.getElementById("list-item");
+  li.innerHTML="";
+  const own=new Set(S.ownedItems);
+  ITEMS.forEach((it,idx)=>{
+    const row=document.createElement("div");
+    row.className="item"+(own.has(idx)?(S.eqItem===idx?" eq":" bought"):"")+(own.has(idx)?"":" lock");
+    row.innerHTML=`<div class="ic"><img src="${it.img}"></div><div class="nm">${it.name}<br><small>${idx===3? "换歌·"+SFX.bgm.trackName() : it.desc}</small></div>
+      <div class="od">${own.has(idx)? (idx===3? "" : (S.eqItem===idx?"已装备":"点击装备")): (comf(it.price)+" 解压值")}</div>`;
+    row.onclick=()=>{
+      if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
+      if(own.has(idx)){
+        if(idx===3){ // 随身听:音乐台,不占装备,点击切歌(行内歌名直接刷新)
+          SFX.bgm.nextTrack();
+          SFX.ui();
+          renderShop();
+          return;
+        }
+        S.eqItem=idx;
+        SFX.ui();
+        toast("已装备: "+it.name);
+        onEquip(idx); renderShop();
+      } else {
+        if(S.money>=it.price){
+          S.money-=it.price; S.ownedItems.push(idx);
+          SFX.unlock(); playPop("b");
+          if(idx===3){ // 随身听:辅助件,买了自动开唱,不占装备位
+            SFX.bgm.start();
+            toast("解锁随身听!商店里点它切歌♪");
+          } else {
+            S.eqItem=idx;
+            toast("解锁并装备了 "+it.name+"!");
+            onEquip(idx);
+          }
+          renderShop(); buildTree();
+        }
+        else { SFX.ui(); toast("解压值不足(需 "+comf(it.price)+")"); }
+      }
+    };
+    li.appendChild(row);
+  });
+  // 桌面
+  const ld=document.getElementById("list-desk");
+  ld.innerHTML="";
+  DESKS.forEach((d,idx)=>{
+    const row=document.createElement("div");
+    const unlocked=idx<=S.curDesk && (idx===0 || S.sheetCount>=(S.ownedDesks?1:1) && S.sheetCount>=d.unlock || S.ownedDesks.includes(idx));
+    const has=S.ownedDesks.includes(idx);
+    row.className="item"+(has?(S.curDesk===idx?" eq":""):" lock");
+    row.innerHTML=`<div class="ic">🖥</div><div class="nm">${d.name}<br><small>${d.note}</small></div>
+      <div class="od">${has?(S.curDesk===idx?"使用中":"切换"):("🔒 换纸×"+d.unlock)}</div>`;
+    row.onclick=()=>{
+      if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
+      if(has){ S.curDesk=idx; SFX.ui(); toast("已切换到 "+d.name); renderShop(); }
+      else if(S.sheetCount>=d.unlock){ S.ownedDesks.push(idx); S.curDesk=idx; SFX.unlock(); toast("解锁了 "+d.name+"!"); renderShop(); }
+      else { SFX.ui(); toast("还未解锁 · "+d.note); }
+    };
+    ld.appendChild(row);
+  });
+  document.getElementById("itm-cnt").textContent=S.ownedItems.length+"/10";
+  document.getElementById("she-cnt").textContent=S.ownedSheets.length+"/7";
+  document.getElementById("dsk-cnt").textContent=S.ownedDesks.length+"/5";
+}
+function comf(n){ return n.toLocaleString(); }
+/* 装备道具的附加效果:光标/旋律 */
+function onEquip(idx){
+  cv.style.cursor = idx===1? 'url("01_泡泡经济素材/道具图标/道具1.png") 4 4, crosshair' : "default";
+  if(idx===8) S.catT=0.6; // 猫咪:开自动戳
+}
+function playMelody(){
+  try{
+    const ac=window._ac||(window._ac=new (window.AudioContext||window.webkitAudioContext)());
+    const now=ac.currentTime;
+    const notes=[523,659,784,659,784,880,784,659];
+    notes.forEach((f,i)=>{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type="sine"; o.frequency.value=f;
+      g.gain.setValueAtTime(0.05,now+i*0.22);
+      g.gain.exponentialRampToValueAtTime(0.001,now+i*0.22+0.18);
+      o.connect(g); g.connect(SFX.mx()); o.start(now+i*0.22); o.stop(now+i*0.22+0.2);
+    });
+  }catch(e){}
+}
+
+/* ================= 音效系统(全代码合成,零素材) ================= */
+const SFX=(function(){
+  const F={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,
+    C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,
+    C5:523.25,D5:587.33,E5:659.25,G5:783.99,C6:1046.5,C7:2093};
+  function ac(){
+    if(!window._ac) window._ac=new (window.AudioContext||window.webkitAudioContext)();
+    return window._ac;
+  }
+  let master=null,sfxGain=null,musicGain=null,comboGain=null;
+  function gMain(){ // 总纲
+    const a=ac();
+    if(!master){ master=a.createGain(); master.gain.value=1; master.connect(a.destination); }
+    if(!sfxGain){ sfxGain=a.createGain(); sfxGain.gain.value=0.7; sfxGain.connect(master); }
+    if(!musicGain){ musicGain=a.createGain(); musicGain.gain.value=0.30; musicGain.connect(master); }
+    if(!comboGain){ comboGain=a.createGain(); comboGain.gain.value=0.9; comboGain.connect(master); }
+    return sfxGain;
+  }
+  function gCombo(){ gMain(); return comboGain; }
+  /* 音效轨:按钮/奖励/换纸/戳泡 */
+  function tone(freq,t0,dur,vol,type){
+    if(window._ac && window._ac.state!=="running") return;
+    const a=ac(), m=gMain();
+    const o=a.createOscillator(), g=a.createGain();
+    o.type=type||"sine"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.2,t0+0.014);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(m); o.start(t0); o.stop(t0+dur+0.03);
+  }
+  function glide(freq,target,t0,dur,vol,type){
+    if(window._ac && window._ac.state!=="running") return;
+    const a=ac(), m=gMain();
+    const o=a.createOscillator(), g=a.createGain();
+    o.type=type||"triangle"; o.frequency.value=freq;
+    o.frequency.exponentialRampToValueAtTime(target,t0+dur*0.6);
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.15,t0+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(m); o.start(t0); o.stop(t0+dur+0.03);
+  }
+  function noise(t0,dur,vol,freq,q){
+    if(window._ac && window._ac.state!=="running") return;
+    const a=ac(), m=gMain();
+    const n=Math.floor(a.sampleRate*dur), buf=a.createBuffer(1,n,a.sampleRate);
+    const d=buf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+    const src=a.createBufferSource(); src.buffer=buf;
+    const flt=a.createBiquadFilter(); flt.type="bandpass"; flt.frequency.value=freq||2400; flt.Q.value=q||1.2;
+    const g=a.createGain();
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.15,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    src.connect(flt); flt.connect(g); g.connect(m); src.start(t0); src.stop(t0+dur+0.03);
+  }
+  /* 音乐轨:BGM 专用 */
+  function mTone(freq,t0,dur,vol,type,out){
+    const a=ac();
+    if(!musicGain) gMain();
+    const o=a.createOscillator(), g=a.createGain();
+    o.type=type||"sine"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.5,t0+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(out||musicGain); o.start(t0); o.stop(t0+dur+0.05);
+  }
+  /* 三首歌的"性格":速度/音色/低音形态完全不同,切歌要听得出来 */
+  const STY=[
+    { name:"晨间序曲", step:0.50, bassW:"sine",    bassDur:3.4, bassVol:0.16, midDur:1.6, midVol:0.09, melW:"sine",     melDur:0.95, melVol:0.12 },
+    { name:"微光夜谈", step:0.72, bassW:"sine",    bassDur:4.4, bassVol:0.21, midDur:2.4, midVol:0.10, melW:"triangle", melDur:1.30, melVol:0.16 }, /* 慢而沉:夜深 */
+    { name:"午后微风", step:0.36, bassW:"triangle", bassDur:2.0, bassVol:0.20, midDur:0.9, midVol:0.13, melW:"triangle", melDur:0.82, melVol:0.17 }, /* 快而亮:天暖 */
+  ];
+  const bgm={
+    on:false, next:0, step:0, id:null, track:0, gapT:0,
+    tracks:[ // 三首可切换曲目,每首4个小节循环(8音/0.5s一小节)
+      [ // 晨间序曲 C-Am-F-G
+        ["C3",["E4","G4","C5","G4","E4","C4","D4","E4"]],
+        ["A3",["C4","E4","A4","E4","C4","A3","B3","C4"]],
+        ["F3",["A4","F4","C5","A4","F4","C4","D4","E4"]],
+        ["G3",["B4","D5","B4","G4","E4","G4","A4","B4"]],
+      ],
+      [ // 微光夜谈 Am-F-Dm-E,更沉
+        ["A3",["C4","E4","A4","E4","C4","E4","G4","E4"]],
+        ["F3",["C4","F4","A4","F4","C4","F4","E4","F4"]],
+        ["D3",["A3","D4","F4","D4","A3","D4","C4","D4"]],
+        ["E3",["G4","E4","B4","E4","G4","B4","A4","B4"]],
+      ],
+      [ // 午后微风 G-C-Em-D,亮一点
+        ["G3",["D4","G4","B4","G4","D4","B4","A4","B4"]],
+        ["C3",["G4","C5","E4","C5","G4","E4","D4","E4"]],
+        ["E3",["B4","E5","B4","G4","E4","G4","A4","B4"]],
+        ["D3",["A4","D5","A4","F4","D4","F4","G4","F4"]],
+      ],
+    ],
+    start(){
+      if(this.on) return; this.on=true; this.step=0;
+      this.next=ac().currentTime+0.15;
+      this.id=setInterval(()=>this.tick(),80);
+    },
+    stop(){ this.on=false; if(this.id){ clearInterval(this.id); this.id=null; } },
+    nextTrack(){
+      const A=ac(), t=A.currentTime;
+      this.track=(this.track+1)%this.tracks.length; this.step=0;
+      this.next=t+0.15;
+      /* 切歌:旧歌已预排的音符还挂在时间线上,先淡出并等它们播完,新歌再进来 */
+      this.gapT=t+1.75;
+      try{
+        musicGain.gain.cancelScheduledValues(t);
+        musicGain.gain.setValueAtTime(0.30,t);
+        musicGain.gain.setValueAtTime(0,t+0.06);
+        musicGain.gain.setValueAtTime(0.30,t+1.85);
+      }catch(e){}
+    },
+    trackName(){ return STY[this.track].name; },
+    tick(){
+      if(!this.on) return;
+      const A=ac();
+      if(this.gapT && A.currentTime<this.gapT) return; // 切歌间隙:旧音播完再排
+      // 挂起期预排时间戳会超前(浏览器挂起 context),恢复后快进跳过,音乐才连贯
+      if(this.next < A.currentTime-0.35) this.next=A.currentTime+0.2;
+      /* 前瞻1.5s(约排3音):定时器被浏览器节流到1s一格也接不上缺口 */
+      const S0=STY[this.track];
+      while(this.next < A.currentTime+1.5){
+        const bar=this.tracks[this.track][int(this.step/8)%4], i=this.step%8, t=this.next;
+        if(i===0){ mTone(F[bar[0]],t,S0.bassDur,S0.bassVol,S0.bassW); }       // 低音铺底
+        if(i===4){ mTone(F[bar[1][4]],t,S0.midDur,S0.midVol,S0.melW); }       // 中音点缀
+        else mTone(F[bar[1][i]],t,S0.melDur,S0.melVol,S0.melW);               // 轻琶音
+        this.next+=S0.step; this.step++;                                       // 每首速度独立
+      }
+    },
+  };
+  /* 连击火焰层:20连突然起火——低频浑厚持续"轰呼"火声(0.5Hz火堆呼吸),低档噼啪点缀,一档一大跳 */
+  const FIREVOL=[0.11,0.15,0.19,0.23]; // 档1-4,每档音量跳变4-5dB
+  const FIREF2=[900,1400,1900,2400];   // 副路"滋滋"随档微开
+  const fire={on:false, layer:0, node:null, f2:null, g3:null, amp:null, lfo:null, lfoG:null, vol:null, pnext:0};
+  function fireSet(){
+    gCombo();
+    if(fire.node) return;
+    const a=ac();
+    const dur=1.5, buf=a.createBuffer(1,(a.sampleRate*dur)|0,a.sampleRate);
+    const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    fire.node=a.createBufferSource(); fire.node.buffer=buf; fire.node.loop=true;
+    const f1=a.createBiquadFilter(); f1.type="lowpass"; f1.frequency.value=420; f1.Q.value=0.8; // 主路:浑厚低火
+    fire.f2=a.createBiquadFilter(); fire.f2.type="bandpass"; fire.f2.frequency.value=900; fire.f2.Q.value=0.5; // 副路:少量滋滋
+    const g1=a.createGain(); g1.gain.value=1.0;
+    const g2=a.createGain(); g2.gain.value=0.35;
+    const f3=a.createBiquadFilter(); f3.type="lowpass"; f3.frequency.value=140;    // 高档低频轰
+    fire.g3=a.createGain(); fire.g3.gain.value=0;
+    fire.amp=a.createGain(); fire.amp.gain.value=1;
+    fire.lfo=a.createOscillator(); fire.lfo.type="sine"; fire.lfo.frequency.value=0.55; // 火堆呼吸(慢,无节奏感)
+    fire.lfoG=a.createGain(); fire.lfoG.gain.value=0.32;
+    fire.vol=a.createGain(); fire.vol.gain.value=0;
+    fire.node.connect(f1); f1.connect(g1); g1.connect(fire.amp);
+    fire.node.connect(fire.f2); fire.f2.connect(g2); g2.connect(fire.amp);
+    fire.node.connect(f3); f3.connect(fire.g3); fire.g3.connect(fire.amp);
+    fire.lfo.connect(fire.lfoG); fire.lfoG.connect(fire.amp.gain);
+    fire.amp.connect(fire.vol); fire.vol.connect(comboGain);
+    fire.node.start(); fire.lfo.start();
+  }
+  function fireTick(){
+    if(!fire.on) return;
+    const A=ac(), L=fire.layer-1, t=A.currentTime;
+    if(fire.vol) fire.vol.gain.setTargetAtTime(FIREVOL[L],t,0.08);            // 突然起火
+    if(fire.f2) fire.f2.frequency.setTargetAtTime(FIREF2[L],t,0.3);
+    if(fire.g3) fire.g3.gain.setTargetAtTime(L>=2?0.3+0.2*(L-2):0,t,0.3);     // 500/1000档低频轰
+    if(fire.lfo) fire.lfo.frequency.setTargetAtTime(0.55+0.08*L,t,0.4);
+    if(A.currentTime>fire.pnext){ // 极稀疏轻噼啪:1.5-3s一声
+      fire.pnext=A.currentTime+1.5+Math.random()*1.5;
+      try{
+        const n=Math.floor(A.sampleRate*0.04), buf=A.createBuffer(1,n,A.sampleRate);
+        const d=buf.getChannelData(0); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+        const src=A.createBufferSource(); src.buffer=buf;
+        const flt=A.createBiquadFilter(); flt.type="bandpass";
+        flt.frequency.value=600+Math.random()*900; flt.Q.value=1.0;
+        const g=A.createGain(); g.gain.value=0.015+0.006*L;
+        src.connect(flt); flt.connect(g); g.connect(comboGain);
+        src.start();
+      }catch(e){}
+    }
+  }
+  function setComboPad(layer){
+    if(layer<1){ // 熄灭
+      if(!fire.on) return;
+      fire.on=false;
+      try{ if(fire.vol) fire.vol.gain.setTargetAtTime(0,ac().currentTime,0.22); }catch(e){}
+      return;
+    }
+    if(fire.on && fire.layer===layer) return;
+    try{ fireSet(); }catch(e){}
+    fire.layer=Math.min(4,layer); fire.on=true;
+    try{ fire.pnext=ac().currentTime+0.08; }catch(e){ fire.pnext=0; }
+  }
+  return {
+    /* 供戳泡/随身听等旧音频走音效轨 */
+    mx: gMain,
+    sfx: gMain,
+    setComboPad,
+    fireTick,
+    /* 机关按钮:弹片咔+低频嗒 */
+    ui(){ try{ const t=ac().currentTime;
+      noise(t+0.004,0.035,0.10,1150,2.5);
+      glide(330,235,t,0.05,0.12,"triangle");
+    }catch(e){} },
+    /* 解锁:上行三音奖励铃 */
+    unlock(){ try{ const t=ac().currentTime;
+      [F.C5,F.E5,F.G5].forEach((f,i)=>tone(f,t+i*0.085,0.24,0.16,"triangle"));
+      tone(F.C6,t+0.29,0.42,0.10,"sine");
+    }catch(e){} },
+    /* 升级:更高四音,亮尾 */
+    upgrade(){ try{ const t=ac().currentTime;
+      [F.C5,F.E5,F.G5,F.C6].forEach((f,i)=>tone(f,t+i*0.07,0.3,0.17,"triangle"));
+      tone(F.C7,t+0.34,0.3,0.05,"sine");
+    }catch(e){} },
+    /* 换纸:塑料膜"刷"——干干净净一声连续摩擦,无起伏无第二声 */
+    sheet(){ try{ const t=ac().currentTime;
+      const a=ac(), m=gMain();
+      const dur=0.45, n=Math.floor(a.sampleRate*dur), buf=a.createBuffer(1,n,a.sampleRate);
+      const d=buf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+      const src=a.createBufferSource(); src.buffer=buf;
+      const flt=a.createBiquadFilter(); flt.type="bandpass"; flt.Q.value=0.9;
+      flt.frequency.setValueAtTime(1350,t);
+      flt.frequency.setTargetAtTime(1850,t+0.2,0.35);   // 轻缓漂移
+      const g=a.createGain();
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.13,t+0.06);
+      g.gain.setValueAtTime(0.13,t+dur*0.55);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      src.connect(flt); flt.connect(g); g.connect(m);
+      src.start(t); src.stop(t+dur+0.05);
+    }catch(e){} },
+    /* 连击升段:i=0..3(20/100/500/1000连),柔和上行闪音,段越高越亮 */
+    combo(i){ try{ const t=ac().currentTime;
+      const base=[392,523,659,784][i]||392, v=[0.13,0.16,0.19,0.22][i]||0.13;
+      glide(180,120,t,0.25,v,"sine");            // 低音锤(柔)
+      tone(base,t+0.04,0.16,0.85*v,"triangle");  // 上行三闪
+      tone(base*1.25,t+0.14,0.16,0.85*v,"triangle");
+      tone(base*1.5,t+0.24,0.34,0.9*v,"sine");   // 收尾亮音
+    }catch(e){} },
+    /* 连击断开:小叹息 */
+    comboBreak(){ try{ const t=ac().currentTime;
+      glide(520,280,t,0.22,0.16,"triangle");
+      glide(220,160,t+0.05,0.30,0.12,"sine");
+    }catch(e){} },
+    /* 狂热:上行冲刺+躁动 */
+    frenzy(){ try{ const t=ac().currentTime;
+      [392,523,659,784,1046].forEach((f,i)=>tone(f,t+i*0.08,0.35,0.16,"triangle"));
+      noise(t+0.02,0.5,0.07,900,1);
+    }catch(e){} },
+    /* 开关:只控音量,不打断播放(关了再开立即恢复) */
+    setSfx(on){ try{ if(!gMain().gain) return; gMain().gain.value=on?0.7:0;
+      if(comboGain) comboGain.gain.value=on?0.9:0; }catch(e){} },
+    setMusic(on){ try{ gMain(); const t=ac().currentTime;
+      musicGain.gain.cancelScheduledValues(t); // 别用切歌的淡入淡出打架
+      musicGain.gain.setValueAtTime(on?0.30:0,t);
+    }catch(e){} },
+    bgm,
+  };
+})();
+/* 音乐/音效分开开关 */
+let musicOn=true, sfxOn=true;
+function toggleMusic(){
+  musicOn=!musicOn; SFX.setMusic(musicOn);
+  document.getElementById("btn-music").textContent="音乐: "+(musicOn?"开":"关");
+  saveSnd();
+}
+function toggleSfx(){
+  sfxOn=!sfxOn; SFX.setSfx(sfxOn);
+  document.getElementById("btn-sfx").textContent="音效: "+(sfxOn?"开":"关");
+  saveSnd();
+}
+function saveSnd(){ try{ localStorage.setItem("bf_snd",JSON.stringify({m:musicOn,s:sfxOn})); }catch(e){} }
+function loadSnd(){
+  try{ const j=JSON.parse(localStorage.getItem("bf_snd")||"null");
+    if(j){ musicOn=j.m!==false; sfxOn=j.s!==false; } }catch(e){}
+  SFX.setMusic(musicOn); SFX.setSfx(sfxOn);
+  document.getElementById("btn-music").textContent="音乐: "+(musicOn?"开":"关");
+  document.getElementById("btn-sfx").textContent="音效: "+(sfxOn?"开":"关");
+}
+
+/* ================= Combo 弹窗 ================= */
+let cbt=0;
+function updateComboUI(dt){
+  if(STEP<3){ return; }
+  const pop=document.getElementById("combo-pop");
+  if(S.combo>0){
+    S.comboTime-=dt;
+    if(S.comboTime<=0){ S.combo=0; pop.style.display="none"; SFX.comboBreak(); SFX.setComboPad(-1); return; }
+    pop.style.display="block";
+    const m=comboMult(S.combo);
+    document.getElementById("cb-mult").textContent="×"+comboOrig(M2C(S.combo));
+    document.getElementById("cb-count").textContent="["+S.combo+" 连击]";
+    document.getElementById("cb-bar").style.width=(S.comboTime/0.5*100)+"%";
+  } else pop.style.display="none";
+}
+function M2C(c){ return c; } // 当前直接显示连击数
+function comboOrig(c){ return comboMult(c); } // 倍率
+
+/* ================= 技能树(点击升级,按mockup排版) ================= */
+const IT_TREE_DESC={ // 已实装效果的道具技能
+  0:"戳泡产出+5%/级", 1:"暴击率+3%/级", 2:"连锁半径+15px/级",
+};
+const UN_TREE=[ // 分组→行,铺平顺序=S.tree.un 索引(0起)
+  ["Combo",[
+    ["计时器延长","连击窗口+0.04秒/级"],
+    ["倍率强化","Combo倍率+8%/级"],
+    ["狂热时长","狂热+1.5秒/级"],
+    ["冷却缩短","狂热冷却-4秒/级"],
+  ]],
+  ["连锁",[
+    ["收益增强","连锁产出+5%/级"],
+  ]],
+  ["泡泡类型",[ // 节点用对应泡泡的颜色圆点(按mockup)
+    ["蓝泡率","蓝泡概率+8%/级","#7ab8ff"],
+    ["黄铜泡率","黄铜泡概率+8%/级","#c8913a"],
+    ["金泡率","金泡概率+8%/级","#ffd24a"],
+    ["彩虹泡率","彩虹泡概率+8%/级","#ff8bd0"],
+    ["暗黑泡率","暗黑泡概率+8%/级","#a06cd5"],
+    ["分裂泡率","分裂泡概率+8%/级","#3ddc84"],
+    ["虚空泡率","虚空泡概率+8%/级","#8a8aff"],
+    ["透明泡率","透明泡概率+8%/级","#eaeaea"],
+  ]],
+];
+const UN_FLAT=UN_TREE.flatMap(g=>g[1].map(u=>u[0]));
+function treePrice(lv){ return 50*Math.pow(3,lv); } // 升到 lv+1 的费用
+function diaRow(lv,side,row,dotColor){
+  let s="";
+  const node=(n,own,ult)=> dotColor?
+    `<div class="dot${ult?" ult":""}${own?" own":""}" style="--dc:${dotColor}" data-side="${side}" data-row="${row}" data-lv="${n}" title="${treePrice(n-1).toLocaleString()}解压值"></div>`:
+    `<div class="dia${ult?" ult":""}${own?" own":""}" data-side="${side}" data-row="${row}" data-lv="${n}" title="${treePrice(n-1).toLocaleString()}解压值"></div>`;
+  for(let i=0;i<4;i++){ s+=node(i+1,i<lv,false)+`<div class="line"></div>`; }
+  s+=node(5,lv>=5,true);
+  return s;
+}
+function buildTree(){
+  const owned=new Set(S.ownedItems);
+  const L=document.getElementById("tree-left");
+  L.innerHTML=ITEMS.map((it,i)=>{
+    const lv=S.tree.it[i];
+    const has=owned.has(i);
+    const real=IT_TREE_DESC[i]!==undefined;
+    let lock="",tip;
+    if(!has){ lock="nohave"; tip=`${it.name}|去商店购买后解锁|${it.price.toLocaleString()}解压值`; }
+    else if(!real){ lock="unimpl"; tip=`${it.name}|玩法未实装|暂不可升级`; }
+    else tip=`${it.name}|${IT_TREE_DESC[i]}|升级费 ${treePrice(lv).toLocaleString()}解压值`;
+    return `<div class="trow${lock?" tlk":""}" data-lock="${lock}" data-tip="${tip}"><div class="tico"><img src="${it.img}"></div><div class="tname">${it.name}</div>
+      <div class="nodes">${diaRow(lv,"it",i)}</div></div>`;
+  }).join("");
+  const R=document.getElementById("tree-right");
+  let unIdx=0;
+  R.innerHTML=UN_TREE.map(g=>
+    `<div class="gtitle"><span class="gar">▸</span>${g[0]}</div>`+g[1].map(u=>{
+      const i=unIdx++;
+      const lv=S.tree.un[i];
+      return `<div class="trow" data-tip="${u[0]}|${u[1]}|升级费 ${treePrice(lv).toLocaleString()}解压值">
+        <div class="tico">${u[2]?`<span style="color:${u[2]}">●</span>`:"▲"}</div><div class="tname">${u[0]}</div>
+        <div class="nodes">${diaRow(lv,"un",i,u[2])}</div></div>`;
+    }).join("")).join("");
+}
+/* 技能树浮层 tip(金框,按mockup) */
+const ttip=document.getElementById("ttip");
+document.getElementById("tree").addEventListener("mouseover",e=>{
+  const tr=e.target.closest(".trow[data-tip]");
+  if(tr){
+    const p=tr.dataset.tip.split("|");
+    ttip.innerHTML=`<b style="color:#ffd75e">${p[0]}</b><br>${p[1]}<br><span class="tc">${p[2]}</span>`;
+    ttip.style.display="block";
+  }
+});
+document.getElementById("tree").addEventListener("mousemove",e=>{
+  if(ttip.style.display==="block"){
+    const r=document.getElementById("tree").getBoundingClientRect();
+    ttip.style.left=Math.min(e.clientX-r.left+16,r.width-250)+"px";
+    ttip.style.top=(e.clientY-r.top+18)+"px";
+  }
+});
+document.getElementById("tree").addEventListener("mouseout",()=>{ ttip.style.display="none"; });
+document.getElementById("tree").addEventListener("click",e=>{
+  const trow=e.target.closest(".trow");
+  const dia=e.target.closest(".dia,.dot"); // dot:泡泡类型彩色圆点, dia:菱形
+  if(!dia||!trow) return;
+  const lock=trow.dataset.lock;
+  if(lock==="nohave"){ SFX.ui(); toast("先去商店购买该道具"); return; }
+  if(lock==="unimpl"){ SFX.ui(); toast("该道具玩法未实装,暂不能升级"); return; }
+  const side=dia.dataset.side, row=+dia.dataset.row, want=+dia.dataset.lv;
+  const arr=side==="it"?S.tree.it:S.tree.un;
+  const cur=arr[row];
+  if(want!==cur+1) return; // 必须按顺序升下一级
+  const price=treePrice(cur);
+  if(S.money<price){ SFX.ui(); toast("解压值不足(需 "+price.toLocaleString()+")"); return; }
+  S.money-=price; arr[row]=cur+1;
+  const name=side==="it"?ITEMS[row].name:UN_FLAT[row];
+  toast(name+" 升到 "+arr[row]+" 级!");
+  SFX.upgrade();
+  playPop("b"); save(); buildTree();
+});
+
+/* ================= 事件 ================= */
+function canvasPos(e){
+  const r=cv.getBoundingClientRect();
+  return [ (e.clientX-r.left)/r.width*cv.width, (e.clientY-r.top)/r.height*cv.height ];
+}
+/* ================= 道具玩法(fireAt 分派) ================= */
+let flyers=[];
+function fireAt(x,y){
+  if(STEP<2) return;
+  const it=S.eqItem;
+  switch(it){
+    case 0: case 1: case 2: case 8: { // 手指/缝衣针/爆竹/猫咪:点击戳泡(爆竹走概率连锁)
+      const b=hitBubble(x,y); if(b) popBubble(b); break;
+    }
+    case 4: cannonAt(x,y); break;   // 弹球炮台
+    case 5: carAt(x,y); break;      // 玩具赛车
+    case 6: laserAt(x,y); break;    // 激光发射器
+    case 7: slingAt(x,y); break;    // 弹弓
+    case 9: annihilate(); break;    // 反物质湮灭器
+  }
+}
+function blastLine(ny,hc){ // 爆横向一条带
+  for(const b of bubbles){
+    if(b.busted) continue;
+    if(Math.abs(b.y-ny)<=hc && b.x>=PAPER.x-10 && b.x<=PAPER.x+PAPER.w+10) burstIt(b);
+  }
+}
+function explodeCircle(cx,cy,r,color){ // 爆圆内全部泡(快照防金泡重生死循环)
+  for(const b of [...bubbles]){
+    if(b.busted) continue;
+    if(Math.hypot(b.x-cx,b.y-cy)<=r+b.r) burstIt(b);
+  }
+  explode(cx,cy,r,color);
+}
+function cannonAt(x,y){ // 弹球:从纸角射向点击处
+  flyers.push({t:0,x:PAPER.x+PAPER.w-14,y:PAPER.y+PAPER.h-30,tx:x,ty:y,sp:5,kind:"cannon"});
+  playPop("b");
+}
+function carAt(x,y){ // 赛车:从纸左开到右,碾过一条线
+  const ny=Math.max(PAPER.y+20,Math.min(PAPER.y+PAPER.h-20,y));
+  flyers.push({t:0,x:PAPER.x-20,y:ny,tx:PAPER.x+PAPER.w+20,ty:ny,sp:4,kind:"car"});
+  blastLine(ny,26);
+}
+function laserAt(x,y){ // 激光:横扫点击所在横向一条带
+  const ny=Math.max(PAPER.y+20,Math.min(PAPER.y+PAPER.h-20,y));
+  flyers.push({t:0,x:PAPER.x+PAPER.w+10,y:ny,tx:PAPER.x-10,ty:ny,sp:6,kind:"laser"});
+  blastLine(ny,34);
+}
+function slingAt(x,y){ // 弹弓:石块抛物线落到点击处,落点爆炸
+  flyers.push({t:0,x:PAPER.x+50,y:PAPER.y+PAPER.h-16,tx:x,ty:y,sp:3.5,kind:"sling"});
+  playPop("b");
+}
+function annihilate(){ // 反物质湮灭器:全屏清,60s冷却
+  if(S.cd>0){ toast("湮灭器冷却中 "+Math.ceil(S.cd)+"s"); return; }
+  S.cd=60; S.flash=0.7;
+  for(const b of [...bubbles]){ if(!b.busted) burstIt(b); }
+  toast("湮灭!整张纸清零");
+}
+function flyerUpdate(dt){
+  for(const f of flyers){
+    f.t+=f.sp*dt;
+    if(f.t>=1){
+      f.done=true;
+      if(f.kind==="cannon") explodeCircle(f.tx,f.ty,80,"#9cc7ff");
+      if(f.kind==="sling") explodeCircle(f.tx,f.ty,85,"#ffb74d");
+      if(f.kind==="car") explode(f.tx,f.ty,60,"#ff6b6b");
+    }
+  }
+  flyers=flyers.filter(f=>!f.done);
+}
+cv.addEventListener("mousedown",e=>{
+  const [x,y]=canvasPos(e);
+  fireAt(x,y); dragging=true; dragLastX=x; dragLastY=y;
+});
+cv.addEventListener("pointerdown",e=>{
+  if(e.pointerType!=="mouse"){
+    const [x,y]=canvasPos(e);
+    fireAt(x,y);
+  }
+});
+cv.addEventListener("mousemove",e=>{
+  if(!dragging) return;
+  if(S.eqItem>2) return; // 道具型武器不拖拽连发
+  const [x,y]=canvasPos(e);
+  const dx=x-dragLastX, dy=y-dragLastY;
+  if(dx*dx+dy*dy>36 && e.buttons===1){
+    const b=hitBubble(x,y);
+    if(b) popBubble(b);
+    dragLastX=x; dragLastY=y;
+  }
+});
+cv.addEventListener("mouseup",()=>dragging=false);
+// 长按连点(点击系道具)
+let holdTimer=null;
+cv.addEventListener("pointerdown",e=>{
+  if(holdTimer) clearInterval(holdTimer);
+  holdTimer=setInterval(()=>{
+    if(S.eqItem>2){ clearInterval(holdTimer); holdTimer=null; return; }
+    const [x,y]=canvasPos({clientX:e.clientX,clientY:e.clientY});
+    const b=hitBubble(x,y); if(b) popBubble(b);
+  },150);
+});
+cv.addEventListener("pointerup",()=>{ if(holdTimer) clearInterval(holdTimer); holdTimer=null; });
+window.addEventListener("pointerup",()=>{ if(holdTimer) clearInterval(holdTimer); holdTimer=null; });
+
+// 商店三段:点标题展开/收起
+document.querySelectorAll("#shop .sec-title").forEach(t=>{
+  t.onclick=()=>{ t.parentElement.classList.toggle("collapsed"); };
+});
+document.getElementById("tab-shop").onclick=()=>{ activate("shop"); };
+document.getElementById("tab-tree").onclick=()=>{ activate("tree"); };
+function activate(which){
+  if(which==="tree" && STEP<5){ toast("技能树界面第5步开放"); return; }
+  if(which==="shop"){
+    document.getElementById("tab-shop").className="tab on";
+    document.getElementById("tab-tree").className="tab off";
+    document.getElementById("tree").style.display="none";
+  } else {
+    document.getElementById("tab-shop").className="tab off";
+    document.getElementById("tab-tree").className="tab on";
+    document.getElementById("tree").style.display="block";
+  }
+}
+function closeTree(){ activate("shop"); }
+/* 通用按钮声:标题热区/页签/商店段/齿轮/设置按钮/关闭树 */
+document.addEventListener("click",e=>{
+  try{ if(window._ac && window._ac.state==="suspended") window._ac.resume(); }catch(err){}
+  if(e.target.closest("#t-go,#t-exit,.tab,.sec-title,#gear,#setpanel button,#tree .close")) SFX.ui();
+});
+document.getElementById("gear").onclick=()=>{
+  const p=document.getElementById("setpanel");
+  p.style.display=p.style.display==="block"?"none":"block";
+};
+function resetSave(){
+  localStorage.removeItem("bf_save"); location.reload();
+}
+function backToTitle(){
+  document.getElementById("title").style.display="block";
+  document.getElementById("setpanel").style.display="none";
+  SFX.bgm.start(); // 标题页也保持背景音乐
+}
+
+/* ================= 存档 ================= */
+function save(){
+  localStorage.setItem("bf_save",JSON.stringify({money:S.money,totalEarned:S.totalEarned,popTotal:S.popTotal,
+    sheetIdx:S.sheetIdx,sheetCount:S.sheetCount,ownedSheets:S.ownedSheets,ownedItems:S.ownedItems,
+    eqItem:S.eqItem,ownedDesks:S.ownedDesks,curDesk:S.curDesk,tree:S.tree}));
+}
+function load(){
+  try{
+    const j=JSON.parse(localStorage.getItem("bf_save")||"null");
+    if(!j) return;
+    S.money=j.money||0; S.totalEarned=j.totalEarned||0; S.popTotal=j.popTotal||0;
+    S.sheetIdx=j.sheetIdx||0; S.sheetCount=j.sheetCount||1;
+    S.ownedSheets=j.ownedSheets||[0]; S.ownedItems=j.ownedItems||[0];
+    S.eqItem=(j.eqItem===3?0:j.eqItem||0); S.ownedDesks=j.ownedDesks||[0]; S.curDesk=j.curDesk||0;
+    if(j.tree&&j.tree.it&&j.tree.it.length===10) S.tree.it=j.tree.it;
+    if(j.tree&&Array.isArray(j.tree.un)) S.tree.un=j.tree.un.concat(new Array(Math.max(0,13-j.tree.un.length)).fill(0));
+  }catch(e){}
+  S.sheetLeft=SHEETS[S.sheetIdx].dens;
+}
+setInterval(save,30000);
+window.addEventListener("beforeunload",save);
+
+/* ================= 主循环 ================= */
+function frame(t){
+  requestAnimationFrame(frame); // 先预约下一帧:中途任何异常都不会让画面僵死
+  const dt=Math.min(0.05,(t-lastT)/1000||0); lastT=t;
+  for(const b of bubbles){
+    if(b.busted) continue;
+    if(b.spawnT<1){ b.spawnT=Math.min(1,b.spawnT+dt*2.5); b.x=b.tx; b.y=b.ty; continue; } // 原地淡入
+    b.x=b.tx; b.y=b.ty; // 泡固定网格位置(不漂浮,保持整齐)
+  }
+  // 道具:飞弹动画/猫咪自动戳/湮灭冷却
+  flyerUpdate(dt);
+  if(S.cd>0) S.cd-=dt;
+  if(STEP>=2 && S.eqItem===8){
+    S.catT-=dt;
+    if(S.catT<=0){
+      S.catT=1.5;
+      const lives=bubbles.filter(b=>!b.busted&&b.spawnT>=1);
+      if(lives.length){ burstIt(lives[int(Math.random()*lives.length)]); }
+    }
+  }
+  // frenzy
+  frenzyTick(dt);
+  updateComboUI(dt);
+  // 音频驱动:主循环每帧排音(rAF 前台不被节流),定时器只是兜底
+  try{ SFX.bgm.tick(); }catch(e){}
+  try{ SFX.fireTick(); }catch(e){}
+  // 数值显示
+  const vnum=document.getElementById("val-num");
+  vnum.textContent=fmt(S.money);
+  vnum.className="num"+(S.combo>=500?" big":"");
+  // 全屏闪白(狂热/连锁)
+  if(S.flash>0){ S.flash-=dt; }
+  draw();
+}
+
+/* ================= 初始化 ================= */
+/* 标题界面:铺图,中央"开始游戏"热区,左上"退出"热区 */
+document.getElementById("t-go").addEventListener("click",()=>{
+  document.getElementById("title").style.display="none";
+  SFX.bgm.start(); // 标题页起就在播,此处确保进入游戏仍在
+  toast("戳泡泡赚钱,去商店买好玩的道具!");
+});
+document.getElementById("t-exit").addEventListener("click",()=>{
+  toast("网页版游戏:直接关闭浏览器窗口即可退出");
+});
+
+/* 开场暗幕:点击=手势解锁音频+淡出进入标题 */
+const wakeEl=document.getElementById("wake");
+wakeEl.addEventListener("click",()=>{
+  let p=null;
+  try{ if(window._ac && window._ac.state==="suspended") p=window._ac.resume(); }catch(e){}
+  (p||Promise.resolve()).then(()=>{ try{ SFX.ui(); }catch(e){} }).catch(()=>{});
+  wakeEl.style.opacity="0";
+  setTimeout(()=>{ wakeEl.style.display="none"; },560);
+});
+
+/* 按钮图精确贴合标题背景(cover裁剪数学) */
+function placeTitle(){
+  const bg=document.getElementById("titleBg"), go=document.getElementById("t-go"), st=document.getElementById("stage");
+  if(!bg||!go||!st||!bg.naturalWidth) return;
+  const sw=st.offsetWidth, sh=st.offsetHeight;
+  const sc=Math.max(sw/bg.naturalWidth, sh/bg.naturalHeight);
+  const dx=(sw-bg.naturalWidth*sc)/2, dy=(sh-bg.naturalHeight*sc)/2;
+  const BX=512, BY=325, BW=352, BH=127; // 按钮开始_椭圆.png: 掩码切出的按钮本体+白字+投影, 外圈透明
+  go.style.left=(BX*sc+dx)+"px"; go.style.top=(BY*sc+dy)+"px";
+  go.style.width=(BW*sc)+"px"; go.style.height=(BH*sc)+"px";
+  go.style.transform="none";
+}
+
+function init(){
+  load();
+  loadSnd();
+  bgImage=new Image(); bgImage.src="01_泡泡经济素材/背景图/主界面桌面.png";
+  membImg=new Image();
+  membImg.onload=()=>{ fitPaperToMembrane(); try{ gridPopulate(SHEETS[S.sheetIdx].dens); }catch(e){} };
+  membImg.src="01_泡泡经济素材/泡膜_空膜.png";  // 第一层: 空膜底纸(无泡, AI清理+剪影), 泡/破泡为第二层; onload时PAPER按膜自适应+重排
+  paperImg=new Image(); paperImg.src="01_泡泡经济素材/泡纸_主界面_透明.png";  // 基础膜:透明泡纸素材
+  loadSpr();
+  gridPopulate(SHEETS[S.sheetIdx].dens);
+  renderShop();
+  buildTree();
+  SFX.bgm.start(); // 标题页就有音乐(浏览器首手势解锁后出声)
+  requestAnimationFrame(frame);
+}
+document.getElementById("titleBg").addEventListener("load", placeTitle);
+window.addEventListener("load", placeTitle);
+init();
+</script>
+</body>
+</html>
