@@ -578,7 +578,7 @@ function burstIt(b){ // 戳破一个泡:原地留下破泡残骸
   if(b===targetBubble) pickTarget();  // 任何方式爆掉高亮泡都立即换新目标(防高亮卡在已爆泡)
   S.popTotal++;
   if(S.comboTime>0) S.combo++; else S.combo=1;
-  S.comboTime=0.5+0.04*S.tree.un[0]; // 技能:计时器延长
+  S.comboTime=(0.5+0.04*S.tree.un[0])*1.5; // 技能:计时器延长(2026-08-31 连击窗口放宽1.5倍)
   const C=[15,80,350,700];
   if(C.includes(S.combo)) SFX.combo(C.indexOf(S.combo)); // 连击升段音
   SFX.setComboPad(S.combo>=15?(S.combo>=700?4:S.combo>=350?3:S.combo>=80?2:1):-1);
@@ -1642,7 +1642,7 @@ let holdTimer=null;
 cv.addEventListener("pointerdown",e=>{
   if(holdTimer) clearInterval(holdTimer);
   holdTimer=setInterval(()=>{
-    if(S.eqItem>2){ clearInterval(holdTimer); holdTimer=null; return; }
+    if(S.eqItem>=2){ clearInterval(holdTimer); holdTimer=null; return; }  // 爆竹(放置型)及道具型禁长按连点,防放置时误戳泡
     if(S.eqItem===1&&needleAb().target){ return; }  // 高亮追踪禁长按
     const [x,y]=canvasPos({clientX:e.clientX,clientY:e.clientY});
     const b=hitBubble(x,y,handRange()); if(b) popBubble(b);
@@ -1771,6 +1771,7 @@ function toggleBuffFold(){  // 折叠/展开
   document.getElementById('buff-fold').textContent=buffFolded?'▸':'▾';  // 折叠=右箭头,展开=下箭头
 }
 function updateAim(){
+  if(S.eqItem!==1){ targetBubble=null; targetChain=0; }  // 切离缝衣针:清除高亮追踪(防残留收益/显示)
   const inTitle = document.getElementById("title").style.display !== "none";
   const idx = inTitle ? "0" : S.eqItem;   // 标题页统一手指,进游戏才按装备
   const src=AIM[idx];
