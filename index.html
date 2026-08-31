@@ -118,12 +118,26 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
   border-radius:12px;padding:12px;z-index:85;display:none;font-size:13px}
 #setpanel button{width:100%;margin-top:6px;padding:7px;background:var(--blue);color:#fff;border:2px solid #000;
   font-size:13px;cursor:pointer;border-radius:8px}
+/* ---------- 爆竹引爆按钮 ---------- */
+#cannon-turret{position:absolute;z-index:45;pointer-events:none;display:none;image-rendering:pixelated;width:41px;height:54px}
+#btn-detonate{position:absolute;z-index:46;display:none;cursor:pointer;
+  line-height:0;transition:transform .1s ease,filter .1s ease}
+#btn-detonate img{display:block;width:70px;height:83px;image-rendering:pixelated}
+#btn-detonate:active{transform:translateY(3px) scale(.94);filter:brightness(.84)}
 /* ---------- Buff窗口(常驻显示当前道具数值加成,实时动态) ---------- */
 #buffpanel{position:absolute;left:14px;top:170px;z-index:44;pointer-events:auto;display:none;
   background:rgba(20,24,44,.88);border:2px solid #ffd75e;border-radius:8px;padding:8px 12px;
   font-size:12px;color:#ffe9a8;line-height:1.7;min-width:132px}
 #buffpanel .buff-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
 #buffpanel .bt{color:#ffd75e;font-weight:bold;font-size:13px}
+/* ---------- CD进度条(有CD道具转CD时显示, 转完隐藏) ---------- */
+#cdbar{position:absolute;left:14px;top:290px;z-index:44;pointer-events:none;display:none;
+  background:rgba(20,24,44,.88);border:2px solid #ffd75e;border-radius:8px;padding:7px 10px;
+  font-size:12px;color:#ffe9a8;min-width:120px}
+#cdbar .cd-name{font-size:11px;margin-bottom:3px;color:#ffd75e}
+#cdbar .cd-track{width:120px;height:9px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden}
+#cdbar .cd-track i{display:block;height:100%;background:linear-gradient(90deg,#ff8b00,#ffd75e);
+  transition:width .1s linear}
 #buffpanel.folded .buff-body{display:none}
 #buffpanel.folded{min-width:auto}
 #buff-fold{background:none;border:none;color:#ffd75e;font-size:16px;cursor:pointer;line-height:1;padding:2px 8px}
@@ -191,15 +205,18 @@ body.deskonly #title,body.deskonly #wake
   </div>
 
   <div id="gear"><img src="01_泡泡经济素材/界面元素/齿轮_最终38.png" alt="设置"></div>
+  <div id="btn-detonate" onclick="triggerAllCrackers()" title="引爆所有爆竹"><img src="01_泡泡经济素材/界面元素/起爆器_素材.png" alt="引爆"></div>
+  <img id="cannon-turret" src="01_泡泡经济素材/界面元素/炮台_素材.png" alt="">
   <img id="aim" src="01_泡泡经济素材/界面元素/手指_指针.png" alt="">
     <img id="aimM" src="01_泡泡经济素材/界面元素/手指_指针.png" alt="">
   <div id="setpanel"><button id="btn-music" onclick="toggleMusic()">音乐: 开</button><button id="btn-sfx" onclick="toggleSfx()">音效: 开</button><button onclick="backToTitle()">回到主页面</button><button onclick="resetSave()">重置存档</button></div>
   <div id="buffpanel"><div class="buff-head"><span class="bt">当前增益</span><button id="buff-fold" onclick="toggleBuffFold()" title="折叠/展开">▾</button></div><div class="buff-body"></div></div>
+  <div id="cdbar"><div class="cd-name"></div><div class="cd-track"><i></i></div></div>
 
   <div id="toast"></div>
 
   <div id="title">
-    <img id="titleBg" src="01_泡泡经济素材/成品库/背景图/主界面_无按钮无光_去齿轮叉.png" alt="">
+    <img id="titleBg" src="01_泡泡经济素材/成品库/背景图/主界面_无按钮无光_去齿轮叉.webp" alt="">
     <div class="hit" id="t-go" title="开始游戏">
       <img id="startBtn" src="01_泡泡经济素材/界面元素/按钮开始_椭圆.png" alt="开始游戏">
     </div>
@@ -245,23 +262,23 @@ const SHEETS=[ // 泡泡纸是消耗品:每张都要重新购买;theme=纸的样
     theme:{bg:"#161c40", edge:"rgba(140,150,255,.9)", stars:2}},
 ];
 /* 各档膜背景(像素风空膜, 构图同基础膜): 5/6 暂无素材, 已锁定 */
-const MEMB_MAP={0:"01_泡泡经济素材/泡膜_空膜.png",
-  1:"01_泡泡经济素材/泡膜/空膜_琉璃膜.png",
-  2:"01_泡泡经济素材/泡膜/空膜_冰霜膜.png",
-  3:"01_泡泡经济素材/泡膜/空膜_棱镜膜.png",
-  4:"01_泡泡经济素材/泡膜/空膜_熔岩膜.png"};
+const MEMB_MAP={0:"01_泡泡经济素材/泡膜_空膜.webp",
+  1:"01_泡泡经济素材/泡膜/空膜_琉璃膜.webp",
+  2:"01_泡泡经济素材/泡膜/空膜_冰霜膜.webp",
+  3:"01_泡泡经济素材/泡膜/空膜_棱镜膜.webp",
+  4:"01_泡泡经济素材/泡膜/空膜_熔岩膜.webp"};
 const ICONS="01_泡泡经济素材/道具图标/";
 const ITEMS=[
   {name:"手指",       price:0,  type:"手动",    icon:"👆", desc:"手动点击",                    img:ICONS+"道具0.png"},
-  {name:"缝衣针",     price:15,  type:"手动",    icon:"🪡", desc:"针形光标 · 20%暴击×3",    img:ICONS+"道具1.png"},
-  {name:"爆竹",       price:100, type:"被动触发",icon:"🧨", desc:"戳泡15%爆炸连锁",          img:ICONS+"道具3.png"},
+  {name:"缝衣针",     price:15,  type:"手动",    icon:"🪡", desc:"针形光标 · 暴击率50%,暴击×3", img:ICONS+"道具1.png"},
+  {name:"爆竹",       price:100, type:"放置(CD)",icon:"🧨", desc:"放置爆竹,定时爆炸清泡",  img:ICONS+"道具3.png"},
   {name:"随身听",     price:500, type:"辅助",    icon:"📻", desc:"换歌",                img:ICONS+"道具2.png"},
   {name:"弹球炮台",   price:1000, type:"手动",   icon:"🔮", desc:"点击发射弹球,路径引爆",   img:ICONS+"道具4.png"},
-  {name:"玩具赛车",   price:8000, type:"手动",   icon:"🏎", desc:"点击碾过一条泡线",         img:ICONS+"道具6.png"},
-  {name:"激光发射器", price:50000, type:"手动",  icon:"🔦", desc:"点击横扫一条泡带",         img:ICONS+"道具5.png"},
-  {name:"弹弓",       price:300000, type:"手动", icon:"🏹", desc:"点击抛物线落点爆炸",       img:ICONS+"道具7.png"},
-  {name:"猫咪",       price:5000000, type:"持续自动",icon:"🐱", desc:"每1.5s自动戳一次",        img:ICONS+"道具8.png"},
-  {name:"反物质湮灭器",price:500000000,type:"冷却(60s)",icon:"🌌", desc:"点击清屏,60s冷却",   img:ICONS+"道具9.png"},
+  {name:"玩具赛车",   price:8000, type:"手动",   icon:"🏎", desc:"点击碾过一条泡线",         img:ICONS+"道具6.png", lock:1},
+  {name:"激光发射器", price:50000, type:"手动",  icon:"🔦", desc:"点击横扫一条泡带",         img:ICONS+"道具5.png", lock:1},
+  {name:"弹弓",       price:300000, type:"手动", icon:"🏹", desc:"点击抛物线落点爆炸",       img:ICONS+"道具7.png", lock:1},
+  {name:"猫咪",       price:5000000, type:"持续自动",icon:"🐱", desc:"每1.5s自动戳一次",        img:ICONS+"道具8.png", lock:1},
+  {name:"反物质湮灭器",price:500000000,type:"冷却(60s)",icon:"🌌", desc:"点击清屏,60s冷却",   img:ICONS+"道具9.png", lock:1},
 ];
 const DESKS=[
   {name:"家里的书桌", unlock:0,    note:"初始",  icon:"01_泡泡经济素材/桌面图标/桌面0.png"},
@@ -301,7 +318,7 @@ let bubbles=[]; let parts=[];
 let rings=[];  // 手指范围圈特效
 let RESETTING=false;  // 重置中: reload前的save跳过,防旧档复活
 let HAND_R_INIT=0, HAND_RMAX_INIT=0;  // 手指范围扩大:初始膜2x2四泡外接圆(固定,不随膜变)
-let floats=[]; let bgImage=null; let paperImg=null; let membImg=null; const membImgs={}; let lastT=0; let frameCount=0;
+let floats=[]; let bgImage=null; let paperImg=null; let membImg=null; const membImgs={}; let lastT=0; let frameCount=0; let marbleImg=null; let marbleBuff=0, marbleBuffT=0;
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
 const ASPECT=1280/720;
 
@@ -346,6 +363,14 @@ function fitPaperToMembrane(){ // 基础膜:玩法区按行列适配(高固定,�
   PAPER.w=latticeFor(SHEETS[S.sheetIdx].dens);
   PAPER.x=Math.round((PAPER.w>740?600:640)-PAPER.w/2);
   if(S.sheetIdx===0) recordHandR();   // PAPER就绪后立即记录固定范围(不依赖换膜)
+  updateDetonatePos();
+  updateCannonTurret();  // 炮台贴膜右下角,换膜后跟随
+}
+function updateDetonatePos(){  // 引爆按钮:贴膜左缘垂直居中(换膜后跟随)
+  const b=document.getElementById('btn-detonate');
+  if(!b) return;
+  b.style.left=(PAPER.x-70-16)+'px';
+  b.style.top=Math.round(PAPER.y+(PAPER.h-83)/2)+'px';
 }
 function recordHandR(){  // 记录初始膜的固定范围: 2x2四泡中心外接圆半径(手指lv1)
   const g=GRID[SHEETS[0].dens]||detectGrid(SHEETS[0].dens);
@@ -407,7 +432,7 @@ function explode(bx,by,r,color){
 }
 function floatsFly(){
   for(const f of floats){ f.t+=1/60;
-    if(f.t>1.1){ f.dead=true; }   // 收益数字留存1.1s(看清)
+    if(f.t>2.2){ f.dead=true; }   // 收益数字留存2.2s(看清)
     f.y-=52*(1/60);
   }
   floats=floats.filter(f=>!f.dead);
@@ -440,6 +465,55 @@ function hitBubbles(x,y,rm=1){  // 返回范围内所有被覆盖的泡(手指�
 }
 // ===== 缝衣针能力(独立分层,可叠加;与手指 handAb 同构) =====
 let targetBubble=null, targetChain=0;  // 高亮追踪状态
+// ===== 爆竹能力(放置型: CD/范围/收益/手动/连锁, 独立分层) =====
+let crackers=[];            // 已放置爆竹
+let crackerCd=0;            // 放置CD计时
+const CRACKER_IMG="01_泡泡经济素材/界面元素/爆竹_素材.png";
+let crackerImg=null;
+const CRACKER_BASE_R=58;    // 基础爆炸半径(≈手指lv1范围)
+function crackerAb(){
+  const lv=S.eqItem===2?S.tree.it[2]:0;
+  return {cdShort:lv>=1, range:lv>=2, boost:lv>=3, manual:lv>=4, burstBonus:lv>=5};  // lv5:同时引爆加成(齐爆越多收益越高)
+}
+function crackerR(){ return CRACKER_BASE_R*(crackerAb().range?1.35:1); }
+function crackerCdMax(){ return crackerAb().cdShort?3:5; }
+function inMembrane(x,y){  // 泡泡膜范围(动态跟随当前膜)
+  return x>=PAPER.x && x<=PAPER.x+PAPER.w && y>=PAPER.y && y<=PAPER.y+PAPER.h;
+}
+function placeCracker(x,y){  // 放置爆竹(点击)
+  if(STEP<2) return false;
+  if(!inMembrane(x,y)){ toast("只能在泡泡膜上放置爆竹"); return false; }
+  if(crackerCd>0){ toast("爆竹CD中"); return false; }
+  if(crackers.length>=8){ toast("爆竹已满(最多8个)"); return false; }
+  crackers.push({x:x, y:y, r:crackerR(), life:crackerAb().manual?9999:5, t:0, done:false});
+  crackerCd=crackerCdMax();
+  SFX.ui();
+  updateBuff();  // 放置后齐爆加成即时刷新
+  return true;
+}
+function crackerBlast(c){  // 爆竹爆炸: 清范围泡 + 收益倍数 + lv5齐爆加成
+  if(c.done) return;
+  c.done=true;
+  const ab=crackerAb();
+  const oldB=S.burstMult||1, oldC=S.chainMult||1;
+  let burstN=1;
+  if(ab.burstBonus){  // lv5: 同时引爆的爆竹越多收益越高
+    burstN=crackers.filter(o=>!o.done).length;   // 本次齐爆数量(含本次)
+  }
+  if(ab.boost) S.burstMult=2;       // lv3 收益×2
+  if(ab.burstBonus) S.chainMult=1+0.25*(burstN-1);  // lv5: 每多爆1个+25%
+  for(const b of [...bubbles]){
+    if(b.busted) continue;
+    if(Math.hypot(b.x-c.x,b.y-c.y)<=c.r+b.r) burstIt(b);
+  }
+  S.burstMult=oldB; S.chainMult=oldC;
+  updateBuff();  // 爆炸后数量变化即时刷新
+}
+function triggerAllCrackers(){  // 引爆按钮: 全部爆炸
+  if(!crackerAb().manual){ toast("需升级:手动引爆"); return; }
+  for(const c of [...crackers]) crackerBlast(c);
+  crackers=crackers.filter(c=>!c.done);
+}
 function needleAb(){
   const lv=S.eqItem===1?S.tree.it[1]:0;
   return {critUp:lv>=1, combo:lv>=2, harvest:lv>=3, critBoost:lv>=4, target:lv>=5};
@@ -489,7 +563,7 @@ function bubbleGain(b,extra=1){
     m*=needleGainExtra(b);
   }
   const gain=Math.round(10*SHEETS[S.sheetIdx].base*m*comboMult(S.combo)*(S.frenzy>0?10:1)*extra
-    *(S.eqItem===0&&S.tree.it[0]>=3?1.5:1)); // 技能:手指lv3手动加成+50%
+    *(S.eqItem===0&&S.tree.it[0]>=3?1.5:1)*(S.burstMult||1)*(S.chainMult||1)*(1+0.03*marbleBuff)); // 手指lv3加成+爆竹爆炸/连锁倍率+弹珠互撞增益(lv4,每层+3%无上限)
   S.money+=gain; S.totalEarned+=gain;
   floats.push({x:b.x,y:b.y-10,txt:(crit?"暴击!+"+fmt(gain):"+"+fmt(gain)),color:crit?"#ff4d36":def.color,t:0});
   explode(b.x,b.y,b.r,def.color);
@@ -510,8 +584,7 @@ function burstIt(b){ // 戳破一个泡:原地留下破泡残骸
   SFX.setComboPad(S.combo>=15?(S.combo>=700?4:S.combo>=350?3:S.combo>=80?2:1):-1);
   if(S.combo>=700 && S.frenzy<=0 && S.frenzyCd<=0) startFrenzy();
   bubbleGain(b);
-  if(S.eqItem===2 && Math.random()<0.15) chainBlast(b); // 爆竹:15%概率引爆连锁
-  if(b.kind==="v") voidBlast(b); // 虚空泡:清屏
+  // if(b.kind==="v") voidBlast(b); // 虚空泡清屏:暂锁(只保留倍率收益),效果待完善后开启
   if(S.sheetLeft<=0 && !hasAlive()) nextSheetGone();
 }
 function hasAlive(){
@@ -661,6 +734,44 @@ function draw(){
     ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.arc(tb.x,tb.y,tb.r+7,0,Math.PI*2); ctx.stroke();  // 暗色外圈提对比
     ctx.strokeStyle="rgba(255,215,94,"+(0.7+0.3*pulse).toFixed(2)+")"; ctx.beginPath(); ctx.arc(tb.x,tb.y,tb.r+4,0,Math.PI*2); ctx.stroke();  // 金色脉动圈
   }
+  // 爆竹: 素材+爆炸范围虚线+快爆闪烁光效
+  for(const c of crackers){
+    ctx.setLineDash([6,4]); ctx.lineWidth=2;
+    ctx.strokeStyle=crackerAb().manual?"rgba(120,200,255,0.85)":"rgba(255,80,60,0.85)";  // 手动模式蓝框,自动爆红框
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    const urgent=c.life<1.5&&!crackerAb().manual;
+    if(urgent){  // 快爆: 红色急促闪光+白色闪点(炸药即将爆炸感)
+      const f=Math.abs(Math.sin(c.t*14));
+      ctx.fillStyle="rgba(255,60,30,"+(0.25+0.5*f).toFixed(2)+")";
+      ctx.beginPath(); ctx.arc(c.x,c.y,14+9*f,0,Math.PI*2); ctx.fill();   // 扩散红色光晕
+      ctx.fillStyle="rgba(255,255,255,"+(0.45+0.55*f).toFixed(2)+")";
+      ctx.beginPath(); ctx.arc(c.x,c.y,4+2.5*f,0,Math.PI*2); ctx.fill();  // 白色闪光点
+    } else {  // 常驻: 温和脉动
+      const pulse=Math.abs(Math.sin(c.t*4));
+      ctx.fillStyle="rgba(255,"+Math.round(150+60*pulse)+",80,"+(0.3+0.3*pulse).toFixed(2)+")";
+      ctx.beginPath(); ctx.arc(c.x,c.y,7+4*pulse,0,Math.PI*2); ctx.fill();
+    }
+    const w=26, h=26*(crackerImg&&crackerImg.complete?crackerImg.height/crackerImg.width:1);
+    const ix=c.x-w/2, iy=c.y-h/2;
+    if(crackerImg&&crackerImg.complete){
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(crackerImg,ix,iy,w,h);
+      ctx.imageSmoothingEnabled=true;
+    } else {
+      ctx.fillStyle="#d33"; ctx.font="15px sans-serif"; ctx.textAlign="center";
+      ctx.fillText("🧨",c.x,c.y+5); ctx.textAlign="left";
+    }
+    {  // 放下即开始闪烁(桶身着色), 快爆时频率/强度加剧
+      const f=Math.abs(Math.sin(c.t*(c.life<1.5?14:6)));
+      const a=(c.life<1.5?0.25:0.15)+0.45*f;
+      ctx.save();
+      ctx.globalCompositeOperation='source-atop';
+      ctx.fillStyle='rgba(255,60,30,'+a.toFixed(2)+')';
+      ctx.fillRect(ix, iy+h*0.3, w, h*0.7);   // 覆盖素材下半70%(桶), 上半引线不闪
+      ctx.restore();
+    }
+  }
   // 粒子
   for(const p of parts){
     p.t+=1/60;
@@ -683,12 +794,19 @@ function draw(){
   // 道具飞行体(弹球/赛车/激光/石块)
   for(const f of flyers){
     const e=Math.min(1,f.t);
-    const fx=f.x+(f.tx-f.x)*e;
-    let fy=f.y+(f.ty-f.y)*e;
+    const fx=f.kind==="cannon"?f.x:f.x+(f.tx-f.x)*e;
+    let fy=f.kind==="cannon"?f.y:f.y+(f.ty-f.y)*e;
     if(f.kind==="sling") fy-=Math.sin(Math.PI*e)*90;
     if(f.kind==="cannon"){
-      ctx.fillStyle="rgba(120,180,255,.5)"; ctx.beginPath(); ctx.arc(fx,fy,12,0,7); ctx.fill();
-      ctx.fillStyle="#e8f3ff"; ctx.beginPath(); ctx.arc(fx,fy,6,0,7); ctx.fill();
+      if(marbleImg && marbleImg.complete){
+        const sm=ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled=false;
+        const s=f.size||36;
+        ctx.drawImage(marbleImg, fx-s/2, fy-s/2, s, s);  // 旋转弹珠素材(大36/分裂小18)
+        ctx.imageSmoothingEnabled=sm;
+      }else{
+        ctx.fillStyle="rgba(120,180,255,.5)"; ctx.beginPath(); ctx.arc(fx,fy,12,0,7); ctx.fill();
+        ctx.fillStyle="#e8f3ff"; ctx.beginPath(); ctx.arc(fx,fy,6,0,7); ctx.fill();
+      }
     }else if(f.kind==="car"){
       ctx.fillStyle="#e63946"; ctx.fillRect(fx-14,fy-8,30,14);
       ctx.fillStyle="#222"; ctx.fillRect(fx-10,fy+4,7,5); ctx.fillRect(fx+3,fy+4,7,5);
@@ -705,7 +823,7 @@ function draw(){
   }
   // 浮字
   for(const f of floats){
-    const a=Math.max(0,0.6-f.t*1.8);
+    const a=f.t<1.4?1:Math.max(0,1-(f.t-1.4)/0.8);   // 前1.4s完全不透明,再0.8s淡出(配合2.2s存活)
     ctx.globalAlpha=a;
     ctx.font="bold 20px Consolas,monospace";
     ctx.strokeStyle="#000"; ctx.lineWidth=3;
@@ -804,7 +922,7 @@ function renderShop(){
     const owned=S.ownedSheets.includes(idx);
     const locked=!!s.lock;
     row.className="item"+(cur?" eq":"")+(locked||!owned?" lock":"");
-    row.innerHTML=`<div class="ic"><img src="01_泡泡经济素材/泡泡纸图标/膜图标${idx}.png"></div><div class="nm">${s.name}<br><small>${s.focus} · 每泡¥${s.base*10} · ${s.dens}泡 · 稀有率×${s.rare}</small></div>
+    row.innerHTML=`<div class="ic"><img src="01_泡泡经济素材/泡泡纸图标/膜图标${idx}.webp"></div><div class="nm">${s.name}<br><small>${s.focus} · 每泡¥${s.base*10} · ${s.dens}泡 · 稀有率×${s.rare}</small></div>
       <div class="od">${cur?"使用中":(locked?"🔒 敬请期待":(owned?"切换":("¥"+s.price.toLocaleString()+" 购买")))}</div>`;
     row.onclick=()=>{
       if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
@@ -812,6 +930,8 @@ function renderShop(){
       if(!owned && S.money<s.price){ SFX.ui(); toast("解压值不足(需 ¥"+s.price.toLocaleString()+")"); return; }
       if(!owned){ S.money-=s.price; S.ownedSheets.push(idx); }
       S.sheetIdx=idx; S.sheetCount++; S.emptyWarn=false;
+      flyers=flyers.filter(f=>f.kind!=="cannon");  // 换膜:场上弹珠全部清零(防撞新膜泡)
+      marbleBuff=0; marbleBuffT=0;                 // 换膜:互撞增益清零
       fitPaperToMembrane();
       gridPopulate(s.dens);
       SFX.sheet();
@@ -827,15 +947,14 @@ function renderShop(){
   ITEMS.forEach((it,idx)=>{
     const row=document.createElement("div");
     row.className="item"+(own.has(idx)?(S.eqItem===idx?" eq":" bought"):"")+(own.has(idx)?"":" lock");
-    row.innerHTML=`<div class="ic"><img src="${it.img}"></div><div class="nm">${it.name}<br><small>${idx===3? "换歌·"+SFX.bgm.trackName() : it.desc}</small></div>
-      <div class="od">${own.has(idx)? (idx===3? "" : (S.eqItem===idx?"已装备":"点击装备")): (comf(it.price)+" 解压值")}</div>`;
+    row.innerHTML=`<div class="ic"><img src="${it.img}"></div><div class="nm">${it.name}<br><small>${idx===3? (S.tree.it[3]>=1? "换歌·"+SFX.bgm.trackName() : "固定播放·"+SFX.bgm.trackName()) : it.desc}</small></div>
+      <div class="od">${own.has(idx)? (idx===3? "" : (S.eqItem===idx?"已装备":"点击装备")): (it.lock?"🔒 敬请期待":(comf(it.price)+" 解压值"))}</div>`;
     row.onclick=()=>{
       if(STEP<4){ SFX.ui(); toast("商店功能第4步开放"); return; }
       if(own.has(idx)){
-        if(idx===3){ // 随身听:音乐台,不占装备,点击切歌(行内歌名直接刷新)
-          SFX.bgm.nextTrack();
-          SFX.ui();
-          renderShop();
+        if(idx===3){ // 随身听:初始固定播放,lv1"切歌"升级后解锁切换
+          if(S.tree.it[3]>=1){ SFX.bgm.nextTrack(); SFX.ui(); renderShop(); }
+          else{ SFX.ui(); toast("需升级：切歌"); }
           return;
         }
         S.eqItem=idx;
@@ -843,6 +962,7 @@ function renderShop(){
         toast("已装备: "+it.name);
         onEquip(idx); renderShop(); updateAim();
       } else {
+        if(it.lock){ SFX.ui(); toast("该道具制作中,敬请期待"); return; }  // 未实装道具锁定
         if(S.money>=it.price){
           S.money-=it.price; S.ownedItems.push(idx);
           SFX.unlock(); playPop("b");
@@ -1201,14 +1321,15 @@ function comboOrig(c){ return comboMult(c); } // 倍率
 
 /* ================= 技能树(点击升级,按mockup排版) ================= */
 const IT_TREE_DESC={ // 已实装效果的道具技能(玩法判定用;tooltip 展示见 IT_TREE_NODES)
-  0:"戳泡产出+5%/级", 1:"暴击流:基础暴击率50%,暴击×3,技能逐层强化", 2:"连锁半径+15px/级",
+  0:"手动加成+50%,范围/镜像/滑动逐层解锁", 1:"暴击流:基础暴击率50%,暴击×3,技能逐层强化", 2:"放置型:CD5s自动爆,齐爆加成,技能逐层强化",
+  4:"弹射/攻速/三连发/互撞增益/分裂 逐层实装",
 };
 const IT_TREE_NODES=[ // 道具技能树每行5个节点:[技能名,效果描述], 来源=策划案表9(效果未实装,仅展示)
   [["范围扩大","戳泡作用范围扩大"],["双手操作","左右开弓,交替戳泡"],["手动加成(+50%)","手动产出+50%"],["连击加成","连击越高,点击收益越高"],["划屏横扫","滑动划过路径上的泡泡全部戳破"]],
   [["暴击率提升","基础暴击率50%,暴击率+25%→75%"],["连击收益","每1连击额外收益+1%,上限+50%"],["特殊泡泡收割","金/彩虹/虚空泡点击收益×2"],["暴击强化","暴击率+25%至必暴,暴击收益×2"],["高亮追踪","高亮泡连续命中+15%/连(上限×5),点错断链重置"]],
-  [["概率翻倍","戳泡爆炸概率翻倍"],["范围扩大","爆炸波及范围更大"],["连锁引爆","引爆相邻爆竹,形成连锁"],["高爆装药(×3)","爆炸伤害×3"],["同时引爆加成","多颗爆竹同时引爆,倍率叠加"]],
-  [["曲目+1","可播放曲目+1"],["曲目+1","可播放曲目+1"],["曲目+1","可播放曲目+1"],["曲目+1","可播放曲目+1"],["隐藏曲目+隐藏剧情","播放时随机触发一段录音片段"]],
-  [["弹跳次数(2→6)","弹球弹跳次数2→6"],["攻速翻倍","发射速度翻倍"],["弹球风暴(3发齐射)","一次发射3颗弹球"],["穿透弹","弹球穿透泡泡继续弹跳"],["分裂弹","命中后分裂多个小球弹跳"]],
+  [["CD缩短","放置CD 5s→3s"],["范围扩大","爆炸半径+35%"],["爆炸强化","爆炸收益×2"],["手动引爆","爆竹不自动爆,可叠放多个,一键全爆"],["同时引爆加成(终极)","齐爆爆竹越多收益越高,每多1个+25%"]],
+  [["切歌","解锁歌曲切换(初始三首固定播放)"],["曲目+1","可播放曲目+1"],["曲目+1","可播放曲目+1"],["曲目+1","可播放曲目+1"],["隐藏曲目+隐藏剧情","播放时随机触发录音片段"]],
+  [["弹跳次数(1→3)","撞泡后弹射1→3次(打4个泡)"],["攻速翻倍","发射CD 1s→0.5s"],["弹球风暴(3发齐射)","60°扇形,中间=瞄准方向,±30°各一发"],["互撞增益","弹珠互撞触发收益buff(数值低)"],["分裂弹","大弹珠分裂3个小弹珠(一半大小,只能分裂一次)"]],
   [["大型车体","车身变大,碾过更宽"],["极速狂飙","速度大幅提升"],["旋转刀锋","两侧刀片切割周围泡泡"],["火焰轨迹","路径留下火焰,烧出新泡泡"],["Combo分身","连击越高,车越多,跟随光标"]],
   [["光束加宽","横扫光束更宽"],["多道并行(3条)","一次同步发射3条光束"],["折射弹射","穿透后弹射相邻泡泡"],["多彩折射","折射变多色,效果不同"],["连锁折射","折射次数上限提升"]],
   [["蓄力重击(×5)","按住蓄力,松手释放×5"],["弹射(3跳)","命中后弹跳最多3次"],["三连散射","一次发射3发弹丸"],["爆裂弹药","命中后爆炸,范围伤害"],["弹射风暴","弹跳×2+同时散射3颗"]],
@@ -1219,11 +1340,11 @@ const UN_TREE=[ // 分组→行,铺平顺序=S.tree.un 索引(0起)
   ["Combo",[
     ["计时器延长","连击窗口+0.04秒/级"],
     ["倍率强化","Combo倍率+8%/级"],
-    ["狂热时长","狂热+1.5秒/级"],
-    ["冷却缩短","狂热冷却-4秒/级"],
+    ["狂热时长","狂热+1.5秒/级",null,1],
+    ["冷却缩短","狂热冷却-4秒/级",null,1],
   ]],
   ["连锁",[
-    ["收益增强","连锁产出+5%/级"],
+    ["收益增强","连锁产出+5%/级",null,1],
   ]],
   ["泡泡类型",[ // 节点用对应泡泡的颜色圆点(按mockup)
     ["蓝泡率","蓝泡概率+8%/级","#7ab8ff"],
@@ -1267,7 +1388,8 @@ function buildTree(){
     `<div class="gtitle"><span class="gar">▸</span>${g[0]}</div>`+g[1].map(u=>{
       const i=unIdx++;
       const lv=S.tree.un[i];
-      return `<div class="trow">
+      const lock=u[3]?1:0;  // 未实装锁定(狂热/冷却/连锁收益)
+      return `<div class="trow${lock?" tlk":""}" data-lock="${lock?"unimpl":""}">
         <div class="tico">${u[2]?`<span style="color:${u[2]}">●</span>`:"▲"}</div><div class="tname">${u[0]}</div>
         <div class="nodes">${diaRow(lv,"un",i,u[2])}</div></div>`;
     }).join("")).join("");
@@ -1321,6 +1443,7 @@ document.getElementById("tree").addEventListener("click",e=>{
   toast(name+" 升到 "+arr[row]+" 级!");
   SFX.upgrade();
   playPop("b"); save(); buildTree();
+  updateAim();  // 升级后刷新装备UI(引爆按钮/指针等)
 });
 
 /* ================= 事件 ================= */
@@ -1330,6 +1453,7 @@ function canvasPos(e){
 }
 /* ================= 道具玩法(fireAt 分派) ================= */
 let flyers=[];
+let cannonCd=0, cannonHolding=false, cannonTx=0, cannonTy=0;  // 弹球:CD+按住自动连发
 function fireAt(x,y){
   if(STEP<2) return;
   const it=S.eqItem;
@@ -1342,10 +1466,16 @@ function fireAt(x,y){
       const m=handMirror(x,y); if(m){ const hits2=hitBubbles(m.x,m.y,rm); for(const h of hits2) popBubble(h); }
       break;
     }
-    case 1: case 2: case 8: { // 缝衣针/爆竹/猫咪:点击戳泡(爆竹走概率连锁)
+    case 1: { // 缝衣针:精准单点
       const b=hitBubble(x,y); if(b) popBubble(b); break;
     }
-    case 4: cannonAt(x,y); break;   // 弹球炮台
+    case 2: { // 爆竹: 放置型(点击放爆竹, 不再戳泡)
+      placeCracker(x,y); break;
+    }
+    case 8: { // 猫咪:点击戳泡
+      const b=hitBubble(x,y); if(b) popBubble(b); break;
+    }
+    case 4: { cannonHolding=true; cannonTx=x; cannonTy=y; tryFireCannon(); break; }  // 弹球炮台:按下发射+按住自动连发
     case 5: carAt(x,y); break;      // 玩具赛车
     case 6: laserAt(x,y); break;    // 激光发射器
     case 7: slingAt(x,y); break;    // 弹弓
@@ -1365,9 +1495,27 @@ function explodeCircle(cx,cy,r,color){ // 爆圆内全部泡(快照防金泡重�
   }
   explode(cx,cy,r,color);
 }
-function cannonAt(x,y){ // 弹球:从纸角射向点击处
-  flyers.push({t:0,x:PAPER.x+PAPER.w-14,y:PAPER.y+PAPER.h-30,tx:x,ty:y,sp:5,kind:"cannon"});
+function cannonAt(x,y){ // 弹球:从纸右下角沿直线射向点击方向,撞泡弹射+互撞+分裂
+  const sx=PAPER.x+PAPER.w-14, sy=PAPER.y+PAPER.h-30;
+  const dx=x-sx, dy=y-sy;
+  const len=Math.hypot(dx,dy)||1;
+  const lv=S.eqItem===4?(S.tree.it[4]||0):0;
+  const bounces=lv>=1?3:1;              // lv1: 弹射次数1→3(打4个泡)
+  const sp=600;
+  const ang=Math.atan2(dy,dx);
+  if(lv>=3){                            // lv3: 三连发 60°扇形(中间=瞄准方向)
+    for(const da of [0,0.5236,-0.5236]){
+      flyers.push({kind:"cannon",x:sx,y:sy,vx:Math.cos(ang+da)*sp,vy:Math.sin(ang+da)*sp,done:false,bounces,size:36,hp:5,split:false,spawnT:0.5});
+    }
+  }else{
+    flyers.push({kind:"cannon",x:sx,y:sy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,done:false,bounces,size:36,hp:5,split:false,spawnT:0.5});
+  }
   playPop("b");
+}
+function tryFireCannon(){ // CD控制发射(按住自动连发时由帧循环调用)
+  if(cannonCd>0) return;
+  cannonAt(cannonTx,cannonTy);
+  cannonCd=(S.eqItem===4&&S.tree.it[4]>=2)?0.5:1;  // lv2: 攻速翻倍=发射CD 1s→0.5s
 }
 function carAt(x,y){ // 赛车:从纸左开到右,碾过一条线
   const ny=Math.max(PAPER.y+20,Math.min(PAPER.y+PAPER.h-20,y));
@@ -1389,14 +1537,75 @@ function annihilate(){ // 反物质湮灭器:全屏清,60s冷却
   for(const b of [...bubbles]){ if(!b.busted) burstIt(b); }
   toast("湮灭!整张纸清零");
 }
+function splitCannon(f){ // lv5: 大弹珠死亡(次数耗尽/互撞耐久耗尽)时分裂成3个小弹珠(只分裂一次)
+  f.split=true;
+  const ang=Math.atan2(f.vy,f.vx), sp=Math.hypot(f.vx,f.vy);
+  for(const da of [0,0.5236,-0.5236]){
+    flyers.push({kind:"cannon",x:f.x,y:f.y,vx:Math.cos(ang+da)*sp,vy:Math.sin(ang+da)*sp,done:false,bounces:3,size:18,hp:5,split:true,spawnT:0.5});  // 小弹珠独立完整计数:弹射3次(打4泡)+耐久5
+  }
+  f.done=true;
+}
 function flyerUpdate(dt){
   for(const f of flyers){
+    if(f.kind==="cannon"){  // 弹球:直线飞行,撞泡打爆+弹射,死亡(次数耗尽/互撞耐久耗尽)时分裂,膜边框反弹不消耗
+      if(f.spawnT>0) f.spawnT-=dt;  // 发射/分裂后0.5s无敌期(防同位置互撞乱飞)
+      f.x+=f.vx*dt; f.y+=f.vy*dt;
+      const hr=(f.size||36)/2;
+      const x0=PAPER.x+hr, x1=PAPER.x+PAPER.w-hr, y0=PAPER.y+hr, y1=PAPER.y+PAPER.h-hr;
+      if(f.x<x0){ f.x=x0; f.vx=-f.vx; f.b=(f.b||0)+1; }
+      else if(f.x>x1){ f.x=x1; f.vx=-f.vx; f.b=(f.b||0)+1; }
+      if(f.y<y0){ f.y=y0; f.vy=-f.vy; f.b=(f.b||0)+1; }
+      else if(f.y>y1){ f.y=y1; f.vy=-f.vy; f.b=(f.b||0)+1; }
+      for(const b of bubbles){
+        if(b.busted) continue;
+        const dx=f.x-b.x, dy=f.y-b.y;
+        const d=Math.hypot(dx,dy);
+        if(d<=b.r+hr){
+          burstIt(b);
+          f.bounces--;                       // 撞泡消耗1次弹射次数(泡泡独立计数)
+          if(f.bounces<0){                   // 弹射次数耗尽=死亡→lv5分裂
+            if(S.eqItem===4&&S.tree.it[4]>=5&&!f.split&&(f.size||36)>=36) splitCannon(f);
+            else f.done=true;
+            break;
+          }
+          const nx=dx/d||0, ny=dy/d||0;      // 圆法线反射: 弹球-圆心连线方向
+          const dot=f.vx*nx+f.vy*ny;
+          f.vx-=2*dot*nx; f.vy-=2*dot*ny;
+          const push=b.r+hr+1;
+          f.x=b.x+nx*push; f.y=b.y+ny*push;  // 推开防同一泡重复碰撞
+          break;
+        }
+      }
+      if(f.done) continue;
+      if((f.b||0)>=15) f.done=true;  // 膜边框反弹15次未命中(膜空)消失
+      continue;
+    }
     f.t+=f.sp*dt;
     if(f.t>=1){
       f.done=true;
-      if(f.kind==="cannon") explodeCircle(f.tx,f.ty,80,"#9cc7ff");
       if(f.kind==="sling") explodeCircle(f.tx,f.ty,85,"#ffb74d");
       if(f.kind==="car") explode(f.tx,f.ty,60,"#ff6b6b");
+    }
+  }
+  // 弹珠互撞(两两): 法线弹性反弹 + 各自耐久-1(5次消失) + lv4互撞增益
+  const cs=flyers.filter(f=>f.kind==="cannon"&&!f.done);
+  for(let i=0;i<cs.length;i++) for(let j=i+1;j<cs.length;j++){
+    const a=cs[i], b=cs[j];
+    if(a.spawnT>0||b.spawnT>0) continue;  // 无敌期内不互撞
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const d=Math.hypot(dx,dy);
+    const minD=(a.size||36)/2+(b.size||36)/2;
+    if(d<minD && d>0.01){
+      const nx=dx/d, ny=dy/d;
+      const avn=a.vx*nx+a.vy*ny, bvn=b.vx*nx+b.vy*ny;  // 等质量弹性交换法线分量
+      a.vx+=(bvn-avn)*nx; a.vy+=(bvn-avn)*ny;
+      b.vx+=(avn-bvn)*nx; b.vy+=(avn-bvn)*ny;
+      const push=(minD-d)/2+1;
+      a.x-=nx*push; a.y-=ny*push; b.x+=nx*push; b.y+=ny*push;
+      a.hp--; b.hp--;
+      if(S.eqItem===4&&S.tree.it[4]>=4){ marbleBuff++; marbleBuffT=2; }  // lv4:每互撞1次+1层(无上限,持续互撞持续叠),2s无互撞归零
+      if(a.hp<=0){ if(S.eqItem===4&&S.tree.it[4]>=5&&!a.split&&(a.size||36)>=36) splitCannon(a); else a.done=true; }  // 互撞耐久耗尽=死亡→lv5分裂
+      if(b.hp<=0){ if(S.eqItem===4&&S.tree.it[4]>=5&&!b.split&&(b.size||36)>=36) splitCannon(b); else b.done=true; }
     }
   }
   flyers=flyers.filter(f=>!f.done);
@@ -1412,6 +1621,7 @@ cv.addEventListener("pointerdown",e=>{
   }
 });
 cv.addEventListener("mousemove",e=>{
+  if(cannonHolding){ const [x,y]=canvasPos(e); cannonTx=x; cannonTy=y; }  // 按住弹球炮台:方向跟随鼠标
   if(!dragging) return;
   if(S.eqItem>2) return; // 道具型武器不拖拽连发
   if(S.eqItem!==0) return; // 仅手指可拖拽滑动(缝衣针=精准单点,无划屏)
@@ -1426,7 +1636,7 @@ cv.addEventListener("mousemove",e=>{
     dragLastX=x; dragLastY=y;
   }
 });
-cv.addEventListener("mouseup",()=>dragging=false);
+cv.addEventListener("mouseup",()=>{dragging=false; cannonHolding=false;});
 // 长按连点(点击系道具)
 let holdTimer=null;
 cv.addEventListener("pointerdown",e=>{
@@ -1472,9 +1682,11 @@ document.getElementById("gear").onclick=()=>{
 document.getElementById("t-gear").onclick=document.getElementById("gear").onclick;
 
 /* 道具鼠标指针:装备对应道具时跟随鼠标 */
-const AIM={"0":"01_泡泡经济素材/界面元素/手指_指针.png","1":"01_泡泡经济素材/界面元素/缝衣针_指针.png"};
-const AIM_ANCHOR={"0":[5,1],"1":[3,46]};  // 点击锚点(素材坐标):食指尖端,非素材中心
+const AIM={"0":"01_泡泡经济素材/界面元素/手指_指针.png","1":"01_泡泡经济素材/界面元素/缝衣针_指针.png","2":"01_泡泡经济素材/界面元素/爆竹_指针.png"};
+const AIM_ANCHOR={"0":[5,1],"1":[3,46],"2":[9,9]};  // 点击锚点(素材坐标):食指尖端/针尖/准星圆心,非素材中心
 const aimEl=document.getElementById("aim");
+crackerImg=new Image(); crackerImg.src=CRACKER_IMG;
+marbleImg=new Image(); marbleImg.src="01_泡泡经济素材/界面元素/弹珠_素材.png";
 const stageEl=document.getElementById("stage");
 document.getElementById("stage").addEventListener("mousemove",e=>{
   const r=stageEl.getBoundingClientRect();
@@ -1492,11 +1704,39 @@ document.getElementById("stage").addEventListener("mousemove",e=>{
     aimM.style.top=(m.y-anc[1])+"px";
   } else aimM.style.display="none";
 });
+// ===== 通用CD进度条: 有CD道具注册表(后续CD道具加这里) =====
+const CD_INFO={
+  2:{name:'爆竹', get:()=>({remain:crackerCd, total:crackerCdMax()})},
+};
+function updateCdBar(){  // CD转时显示, 转完隐藏
+  const el=document.getElementById('cdbar');
+  const info=CD_INFO[S.eqItem];
+  if(info){
+    const d=info.get();
+    if(d.remain>0 && d.total>0){
+      document.querySelector('#cdbar .cd-name').textContent=info.name+' CD '+d.remain.toFixed(1)+'s';
+      document.querySelector('#cdbar .cd-track i').style.width=((1-d.remain/d.total)*100)+'%';
+      el.style.display='block';
+      return;
+    }
+  }
+  el.style.display='none';
+}
 function buffText(){  // 当前装备的数值加成(常驻+动态)
   const rows=[];
   if(S.eqItem===0){
     const ab=handAb();
     if(ab.bonus>1) rows.push('手动加成 x'+ab.bonus);   // 只列数值加成
+  } else if(S.eqItem===2){
+    const ab=crackerAb();
+    if(ab.range) rows.push('爆炸范围 x1.35');
+    if(ab.boost) rows.push('爆炸收益 x2');
+    if(ab.burstBonus){
+      const n=crackers.filter(o=>!o.done).length;
+      rows.push('齐爆加成 +'+(25*Math.max(0,n-1))+'% ('+n+'个)');
+    }
+  } else if(S.eqItem===4){
+    if(S.tree.it[4]>=4) rows.push('互撞增益 +'+(3*marbleBuff)+'% ('+marbleBuff+'层)');  // lv4:常驻显示(0层也显示),每层+3%无上限,2s无互撞归零
   } else if(S.eqItem===1){
     const ab=needleAb(), cr=needleCrit();
     if(ab.critUp||ab.critBoost) rows.push('暴击率 '+Math.round(cr[0]*100)+'% - 暴击x'+cr[1]);
@@ -1506,11 +1746,22 @@ function buffText(){  // 当前装备的数值加成(常驻+动态)
   }
   return rows;
 }
+function updateCannonTurret(){  // 弹球炮台本体:装备时贴膜精确右下角显示,换膜跟随
+  const el=document.getElementById('cannon-turret');
+  if(!el) return;
+  const show=S.eqItem===4;
+  el.style.display=show?'block':'none';
+  if(show){
+    el.style.left=Math.round(PAPER.x+PAPER.w-41)+'px';  // 右边缘对齐膜右
+    el.style.top=Math.round(PAPER.y+PAPER.h-54)+'px';   // 底边缘对齐膜底
+  }
+}
 function updateBuff(){  // 刷新buff窗口(无buff隐藏,有则常驻实时显示)
   const rows=buffText(), el=document.getElementById('buffpanel');
-  if(!rows.length){ el.style.display='none'; return; }
+  if(!rows.length){ el.style.display='none'; }
   document.querySelector('#buffpanel .buff-body').innerHTML=rows.map(r=>'<div>'+r+'</div>').join('');
   el.style.display='block';
+  updateCdBar();
 }
 let buffFolded=false;
 function toggleBuffFold(){  // 折叠/展开
@@ -1528,8 +1779,11 @@ function updateAim(){
   else{ aimEl.style.display="none"; stageEl.style.cursor="";
     document.getElementById("title").classList.remove("aimon"); }
   aimM.style.display="none";
+  document.getElementById('btn-detonate').style.display=(S.eqItem===2&&S.tree.it[2]>=4)?'block':'none';  // 手动引爆(lv4)才有按钮
+  updateDetonatePos();
   if(S.eqItem===1&&needleAb().target&&!targetBubble) pickTarget();  // 装备缝衣针lv5且膜已铺:补选高亮目标
   updateBuff();
+  updateCannonTurret();
 }
 function resetSave(){
   RESETTING=true;  // 防 beforeunload 的 save 把旧档写回
@@ -1571,6 +1825,12 @@ function frame(t){
   const dt=Math.min(0.05,(t-lastT)/1000||0); lastT=t; frameCount++;
   if(frameCount%10===0){ updateBuff();  // 动态buff值(连击/精准链)实时刷新
     if(S.eqItem===1&&needleAb().target){ if(!window.__dbg) window.__dbg=true; if(!targetBubble&&bubbles.some(b=>!b.busted)) pickTarget(); } }  // 惰性:泡就绪自动选高亮目标
+  if(crackerCd>0) crackerCd-=dt;
+  for(const c of crackers){  // 爆竹倒计时+自动爆炸
+    c.t+=dt; c.life-=dt;
+    if(!crackerAb().manual && c.life<=0) crackerBlast(c);
+  }
+  if(crackers.some(c=>c.done)) crackers=crackers.filter(c=>!c.done);
 
   for(const b of bubbles){
     if(b.busted) continue;
@@ -1578,6 +1838,9 @@ function frame(t){
     b.x=b.tx; b.y=b.ty; // 泡固定网格位置(不漂浮,保持整齐)
   }
   // 道具:飞弹动画/猫咪自动戳/湮灭冷却
+  if(cannonCd>0) cannonCd-=dt;  // 弹球CD
+  if(cannonHolding && cannonCd<=0) tryFireCannon();  // 按住自动连发
+  if(marbleBuffT>0){ marbleBuffT-=dt; if(marbleBuffT<=0) marbleBuff=0; }  // 互撞增益:2s无互撞归零
   flyerUpdate(dt);
   if(S.cd>0) S.cd-=dt;
   if(STEP>=2 && S.eqItem===8){
@@ -1646,7 +1909,7 @@ function placeTitle(){
 function init(){
   load();
   loadSnd();
-  bgImage=new Image(); bgImage.src="01_泡泡经济素材/成品库/背景图/主界面桌面.png";
+  bgImage=new Image(); bgImage.src="01_泡泡经济素材/成品库/背景图/主界面桌面.webp";
   // 各档膜空膜背景(第一层), onload时若为当前膜则 PAPER 自适应+重排
   for(const k in MEMB_MAP){
     const im=new Image(); im.src=MEMB_MAP[k];
