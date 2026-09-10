@@ -173,10 +173,6 @@ body.deskonly #shop,body.deskonly #gear,body.deskonly #setpanel,body.deskonly #t
 body.deskonly #title,body.deskonly #wake
 {display:none!important}
 @keyframes wakePulse{0%,100%{opacity:.45}50%{opacity:1}}
-
-/* 全屏适配：stage 按窗口等比缩放（显示层，不影响游戏逻辑） */
-html,body{overflow:hidden}
-#stage{transform-origin:center center}
 </style>
 </head>
 <body>
@@ -1935,14 +1931,6 @@ function init(){
 document.getElementById("titleBg").addEventListener("load", placeTitle);
 window.addEventListener("load", placeTitle);
 init();
-
-/* 全屏适配：等比缩放显示 */
-function fitStage(){
-  const s=Math.min(innerWidth/1280, innerHeight/720);
-  document.getElementById('stage').style.transform='scale('+s+')';
-}
-window.addEventListener('resize', fitStage);
-fitStage();
 </script>
 </body>
 </html>
